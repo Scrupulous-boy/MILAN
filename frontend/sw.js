@@ -4,9 +4,9 @@
    login patches from returning). We DO precache a small offline fallback + icons
    so failed navigations show a proper page instead of a browser error. */
 
-var CACHE_NAME = 'milan-v103-chat-feed-isolation';
+var CACHE_NAME = 'milan-v104-brand-icons';
 var OFFLINE_URL = '/offline.html';
-var PRECACHE = [OFFLINE_URL, '/favicon.svg', '/assets/icon-192.png', '/manifest.json'];
+var PRECACHE = [OFFLINE_URL, '/favicon.ico', '/favicon.svg', '/apple-touch-icon.png', '/safari-pinned-tab.svg', '/assets/favicon-192x192.png', '/assets/favicon-512x512.png', '/manifest.json'];
 
 self.addEventListener('install', function (event) {
   event.waitUntil(

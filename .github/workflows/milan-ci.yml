@@ -197,6 +197,30 @@ jobs:
             --allow-unauthenticated
             --add-cloudsql-instances=${{ vars.GCP_CLOUD_SQL_CONNECTION_NAME }}
 
+      - name: Diagnose failed Cloud Build
+        if: failure()
+        continue-on-error: true
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+        run: |
+          set +e
+          echo "Recent Cloud Build history in $GCP_REGION:"
+          gcloud builds list --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+            --limit=5 --sort-by=~createTime \
+            --format="table(id,status,createTime,logUrl)"
+          BUILD_ID="$(gcloud builds list --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+            --limit=1 --sort-by=~createTime --filter='status=FAILURE' --format='value(id)' 2>/dev/null | head -n1)"
+          if [[ -n "$BUILD_ID" ]]; then
+            echo "===== Cloud Build failure details: $BUILD_ID ====="
+            gcloud builds describe "$BUILD_ID" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+              --format="yaml(id,status,createTime,logUrl,results,steps)"
+            echo "===== Cloud Build step logs ====="
+            gcloud builds log "$BUILD_ID" --project="$GCP_PROJECT_ID" --region="$GCP_REGION"
+          else
+            echo "No failed build found in $GCP_REGION. Check the Cloud Run build history in Cloud Console."
+          fi
+
   production:
     if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
     name: "LIVE • Post-deploy production smoke"
@@ -213,7 +237,23 @@ jobs:
           set -e
           for attempt in $(seq 1 12); do
             echo "Production check $attempt/12"
-            if curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/ \
+            if curl -fsSL --max-time 15 -o /tmp/milan-home.html https://milanlife.in/ \
+              && grep -Fq '/assets/favicon-96x96.png?v=20261108-brand1' /tmp/milan-home.html \
+              && grep -Fq '<meta property="og:site_name" content="MILAN">' /tmp/milan-home.html \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/favicon.ico \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/favicon.svg \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/apple-touch-icon.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/safari-pinned-tab.svg \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/browserconfig.xml \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-16x16.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-32x32.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-48x48.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-96x96.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-180x180.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-192x192.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-512x512.png \
+              && curl -fsSL --max-time 15 -o /tmp/milan-manifest.json https://milanlife.in/manifest.json \
+              && node -e 'const m=require("/tmp/milan-manifest.json"); for (const n of [192,512]) if (!m.icons.some(i=>i.sizes===n+"x"+n)) process.exit(1)' \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/chat/ \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/robots.txt \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/sitemap.xml \
@@ -225,16 +265,51 @@ jobs:
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/sitemap_index.xml \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/keywords \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/topics; then
+              for spec in "16 favicon-16x16.png" "32 favicon-32x32.png" "48 favicon-48x48.png" "96 favicon-96x96.png" "180 favicon-180x180.png" "192 favicon-192x192.png" "512 favicon-512x512.png"; do
+                set -- $spec
+                curl -fsSL --max-time 15 "https://milanlife.in/assets/$2" -o "/tmp/milan-$1.png"
+              done
+              curl -fsSL --max-time 15 https://milanlife.in/favicon.ico -o /tmp/milan-favicon.ico
+              curl -fsSL --max-time 15 https://milanlife.in/favicon.svg -o /tmp/milan-favicon.svg
+              curl -fsSL --max-time 15 https://milanlife.in/apple-touch-icon.png -o /tmp/milan-apple-touch-icon.png
+              curl -fsSL --max-time 15 https://milanlife.in/safari-pinned-tab.svg -o /tmp/milan-safari.svg
+              node <<'NODE'
+              const fs = require('node:fs');
+              const sig = Buffer.from([137,80,78,71,13,10,26,10]);
+              for (const size of [16,32,48,96,180,192,512]) {
+                const file = '/tmp/milan-' + size + '.png';
+                const b = fs.readFileSync(file);
+                if (b.length < 24 || !b.subarray(0,8).equals(sig) || b.readUInt32BE(16)!==size || b.readUInt32BE(20)!==size) {
+                  throw new Error('Invalid PNG favicon: ' + file);
+                }
+              }
+              const apple = fs.readFileSync('/tmp/milan-apple-touch-icon.png');
+              if (!apple.subarray(0,8).equals(sig) || apple.readUInt32BE(16)!==180 || apple.readUInt32BE(20)!==180) {
+                throw new Error('Apple touch icon is not a valid 180x180 PNG.');
+              }
+              const ico = fs.readFileSync('/tmp/milan-favicon.ico');
+              if (ico.readUInt16LE(0)!==0 || ico.readUInt16LE(2)!==1 || ico.readUInt16LE(4)!==5) {
+                throw new Error('favicon.ico is not a five-resolution ICO file.');
+              }
+              for (const file of ['/tmp/milan-favicon.svg','/tmp/milan-safari.svg']) {
+                const svg = fs.readFileSync(file,'utf8');
+                if (!svg.includes('<svg') || !svg.includes('</svg>')) throw new Error('Invalid SVG icon: ' + file);
+              }
+              console.log('Verified 7 PNG favicon sizes, Apple 180px touch icon, 5-size ICO and SVG masks.');
+          NODE
               health_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/health)"
               printf '%s' "$health_payload" | node -e 'let raw="";process.stdin.on("data",c=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw);if(p.healthSemantics?.level!=="liveness"||typeof p.healthSemantics?.realDwnProtocol!=="boolean")process.exit(1)}catch(_){process.exit(1)}})'
               pay_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/milan-pay/config)"
               printf '%s' "$pay_payload" | node -e 'let raw="";process.stdin.on("data",c=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw);if(p.ok!==true||p.verificationMode!=="manual-bank-verification"||p.automaticPaymentConfirmationAvailable!==false||typeof p.merchantVerificationStatus!=="string"||typeof p.upiAvailable!=="boolean"||typeof p.googlePayIosAvailable!=="boolean")process.exit(1)}catch(_){process.exit(1)}})'
-              echo "🟢 LIVE — public UI, health semantics and MILAN Pay status contract are reachable"
+              echo "🟢 LIVE — UI, favicon formats, PWA manifest, OG site name, health and MILAN Pay contracts are reachable"
               {
                 echo "## 🟢 LIVE — Production"
                 echo ""
                 echo "Production smoke checks passed:"
                 echo "- / and /chat/"
+                echo "- favicon.ico, valid favicon.svg, Apple touch icon, Safari mask, Windows tile"
+                echo "- PNG favicon sizes 16/32/48/96/180/192/512 and PWA manifest"
+                echo "- Homepage OG site_name is MILAN"
                 echo "- /robots.txt, /sitemap.xml, /sitemap-index.xml"
                 echo "- /llms.txt, /keywords.json, /ai-info and aliases"
                 echo "- /api/health reports liveness separately from DWN protocol readiness"

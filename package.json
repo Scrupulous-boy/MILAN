@@ -8,7 +8,7 @@
     "dev": "node -r ./backend/services/avatar-hydration-guard.js backend/server.js",
     "mail:test": "node backend/scripts/test-mail.js",
     "mail:diagnose": "node backend/scripts/smtp-diagnose.js",
-    "build": "node scripts/verify-build.js",
+    "build": "node scripts/prepare-favicons.js && node scripts/verify-build.js",
     "test:chat": "node scripts/chat-self-test.js",
     "test:payment": "node scripts/payment-self-test.js",
     "test:milan-pay": "node scripts/milan-pay-self-test.js",
@@ -31,7 +31,8 @@
     "test:cashfree-gateway": "node scripts/cashfree-gateway-self-test.js",
     "test:cashfree-route": "node scripts/cashfree-route-self-test.js",
     "test:cashfree": "npm run test:cashfree-gateway && npm run test:cashfree-route",
-    "test:webauthn": "node scripts/webauthn-voroa-self-test.js"
+    "test:webauthn": "node scripts/webauthn-voroa-self-test.js",
+    "prestart": "node scripts/prepare-favicons.js"
   },
   "dependencies": {
     "@simplewebauthn/server": "^13.3.2",

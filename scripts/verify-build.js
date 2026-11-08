@@ -26,6 +26,11 @@ const requiredFiles = [
   'Milan-Sentinel/scripts/execute-case.js',
   'docs/MILAN_ONE_ARCHITECTURE.md',
   'docs/ENVIRONMENT_CONTRACT.md',
+  'scripts/prepare-favicons.js',
+  'frontend/favicon.svg',
+  'frontend/assets/favicon.svg',
+  'frontend/safari-pinned-tab.svg',
+  'frontend/browserconfig.xml',
   '.github/workflows/milan-ci.yml',
   '.github/dependabot.yml',
   '.gcloudignore'
@@ -39,10 +44,97 @@ try { matrix = JSON.parse(read('Milan-Sentinel/scenarios/test-matrix.json')); } 
 
 check(pkg && pkg.engines && pkg.engines.node && Number.parseInt(pkg.engines.node.replace(/[^0-9]/g, ''), 10) >= 22,
   'Root package must declare Node.js 22+.');
-check(pkg && pkg.scripts && pkg.scripts.build === 'node scripts/verify-build.js',
-  'Root build script must run the real repository integrity verifier.');
+check(pkg && pkg.scripts && pkg.scripts.build === 'node scripts/prepare-favicons.js && node scripts/verify-build.js',
+  'Root build script must generate/validate favicon assets before repository integrity checks.');
+check(pkg && pkg.scripts && pkg.scripts.prestart === 'node scripts/prepare-favicons.js',
+  'Production startup must prepare favicon files before Express begins serving requests.');
 check(pkg && pkg.scripts && pkg.scripts.start === 'node -r ./backend/services/avatar-hydration-guard.js backend/server.js',
   'Production start script must launch the Express Node service.');
+
+const faviconPngSpecs = [
+  ['frontend/assets/favicon-16x16.png', 16],
+  ['frontend/assets/favicon-32x32.png', 32],
+  ['frontend/assets/favicon-48x48.png', 48],
+  ['frontend/assets/favicon-96x96.png', 96],
+  ['frontend/assets/favicon-180x180.png', 180],
+  ['frontend/assets/favicon-192x192.png', 192],
+  ['frontend/assets/favicon-512x512.png', 512],
+  ['frontend/apple-touch-icon.png', 180],
+  ['frontend/favicon.png', 48]
+];
+const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+for (const [file, size] of faviconPngSpecs) {
+  if (!exists(file)) { failures.push('Generated favicon PNG missing: ' + file); continue; }
+  const image = fs.readFileSync(path.join(root, file));
+  check(image.length >= 24 && image.subarray(0, 8).equals(pngSignature),
+    file + ' must contain a valid PNG signature.');
+  if (image.length >= 24 && image.subarray(0, 8).equals(pngSignature)) {
+    check(image.readUInt32BE(16) === size && image.readUInt32BE(20) === size,
+      file + ' must be exactly ' + size + 'x' + size + ' pixels.');
+  }
+}
+for (const file of ['frontend/favicon.ico', 'frontend/assets/favicon.ico']) {
+  if (!exists(file)) { failures.push('Generated ICO missing: ' + file); continue; }
+  const ico = fs.readFileSync(path.join(root, file));
+  check(ico.length > 6 && ico.readUInt16LE(0) === 0 && ico.readUInt16LE(2) === 1 && ico.readUInt16LE(4) === 5,
+    file + ' must be a valid multi-resolution ICO with five PNG-backed entries.');
+}
+for (const file of ['frontend/favicon.svg', 'frontend/assets/favicon.svg', 'frontend/safari-pinned-tab.svg']) {
+  const svg = exists(file) ? read(file) : '';
+  check(/<svg\b/.test(svg) && /<\/svg>/.test(svg), file + ' must be a real standalone SVG document.');
+}
+const homepageHtml = read('frontend/index.html');
+check(homepageHtml.includes('/assets/favicon-96x96.png?v=20261108-brand1'),
+  'Homepage must advertise the stable 96px PNG favicon for search crawlers.');
+check(homepageHtml.includes('/favicon.ico?v=20261108-brand1') &&
+  homepageHtml.includes('/favicon.svg?v=20261108-brand1') &&
+  homepageHtml.includes('/apple-touch-icon.png?v=20261108-brand1'),
+  'Homepage must advertise ICO, SVG and Apple touch icons with the same brand version.');
+check(homepageHtml.includes('<meta property="og:site_name" content="MILAN">'),
+  'Homepage Open Graph site name must be the canonical MILAN brand.');
+
+const brandedHtmlPages = [
+  'frontend/404.html', 'frontend/about.html', 'frontend/admin-users.html',
+  'frontend/app.html', 'frontend/best-social-media-apps.html',
+  'frontend/chat/index.html', 'frontend/cookie-policy.html',
+  'frontend/decentralized-social-media-premium.html',
+  'frontend/decentralized-social-media.html', 'frontend/decentralized-social-network.html',
+  'frontend/decentralized-web-node.html', 'frontend/disclaimer.html',
+  'frontend/index.html', 'frontend/keywords.html', 'frontend/launch.html',
+  'frontend/milan-pay.html', 'frontend/music.html', 'frontend/offline.html',
+  'frontend/privacy.html', 'frontend/private-social-network.html',
+  'frontend/reset-password.html', 'frontend/settings.html',
+  'frontend/social-media-privacy.html', 'frontend/storage-upgrade.html',
+  'frontend/terms.html', 'frontend/verify-email.html',
+  'frontend/web5-ecosystem.html', 'frontend/what-is-web5.html',
+  'frontend/who-is-the-founder-of-milan.html'
+];
+for (const file of brandedHtmlPages) {
+  if (!exists(file)) { failures.push('Branded HTML page missing: ' + file); continue; }
+  const document = read(file);
+  check(document.includes('/assets/favicon-96x96.png?v=20261108-brand1') &&
+    document.includes('/favicon.ico?v=20261108-brand1') &&
+    document.includes('/favicon.svg?v=20261108-brand1') &&
+    document.includes('/apple-touch-icon.png?v=20261108-brand1') &&
+    document.includes('/manifest.json'),
+    file + ' must use the complete common MILAN icon set.');
+  if (/<meta\\b[^>]*\\bproperty=["']og:title["']/i.test(document)) {
+    const siteTag = (document.match(/<meta\\b(?=[^>]*\\bproperty=["']og:site_name["'])[^>]*>/i) || [])[0] || '';
+    check(/\\bcontent=["']MILAN["']/i.test(siteTag),
+      file + ' must use the canonical Open Graph site name MILAN.');
+  }
+}
+const pwaManifest = JSON.parse(read('frontend/manifest.json'));
+for (const [size, filename] of [[192, 'favicon-192x192.png'], [512, 'favicon-512x512.png']]) {
+  check(pwaManifest.icons.some(icon => icon.sizes === size + 'x' + size && icon.src.includes(filename)),
+    'PWA manifest must point to a real ' + size + 'x' + size + ' icon.');
+}
+const serviceWorker = read('frontend/sw.js');
+check(serviceWorker.includes('milan-v104-brand-icons') &&
+  serviceWorker.includes("'/assets/favicon-192x192.png'") &&
+  serviceWorker.includes("'/assets/favicon-512x512.png'"),
+  'Service worker must invalidate the obsolete favicon cache and precache valid PWA icons.');
+
   check(pkg && pkg.dependencies && typeof pkg.dependencies === 'object',
     'Root package must declare a runtime dependency map.');
   check(exists('backend/server.js'),
