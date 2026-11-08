@@ -540,10 +540,15 @@ app.get('/favicon.ico', (_req, res) => {
 });
 app.get('/favicon.svg', (_req, res) => {
   res.type('image/svg+xml');
-  // Not "immutable": browsers must be able to pick up a new icon. Cache-busting ?v= in the
-  // HTML handles instant refresh; this header just keeps re-fetches cheap.
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
   res.sendFile(path.join(__dirname, '../frontend/favicon.svg'));
+});
+app.get('/apple-touch-icon.png', (_req, res) => {
+  res.type('image/png');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
+  res.sendFile(path.join(__dirname, '../frontend/apple-touch-icon.png'));
 });
 app.get('/sitemap.xml', (_req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -774,8 +779,15 @@ app.use(express.static(path.join(__dirname, '../frontend'), {
   maxAge: process.env.STATIC_CACHE_MAX_AGE || '0',
   etag: true,
   setHeaders: (res, filePath) => {
-    // Favicons/logos/icons rarely change — let browsers cache them instead of
-    // re-downloading on every load. HTML keeps the existing behavior.
+    // Brand icons must revalidate daily: a stale icon is visible in tabs,
+    // bookmarks, PWA shells and crawler previews long after an HTML deploy.
+    if (/\/(?:favicon(?:-[^/]+)?\.(?:png|ico|svg)|apple-touch-icon\.png|safari-pinned-tab\.svg|browserconfig\.xml)$/i.test(filePath) ||
+        /\/assets\/(?:favicon-[^/]+\.png|favicon\.ico|favicon\.svg|icon-(?:192|512)\.png|apple-touch-icon\.png)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      return;
+    }
+    // General static assets retain their existing longer cache policy.
     if (/\/assets\//.test(filePath) || /\.(png|jpg|jpeg|svg|ico|webp)$/i.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
       return;
