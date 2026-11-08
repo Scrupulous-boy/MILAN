@@ -187,18 +187,45 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
 
-      - name: Deploy MILAN to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v3
-        with:
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-          region: ${{ vars.GCP_REGION }}
-          service: ${{ vars.GCP_CLOUD_RUN_SERVICE }}
-          source: ./
-          secrets: |
-            MILAN_DATABASE_URL=MILAN_DATABASE_URL:latest
-          flags: >-
-            --allow-unauthenticated
-            --add-cloudsql-instances=${{ vars.GCP_CLOUD_SQL_CONNECTION_NAME }}
+      - name: Build the explicit Node.js Dockerfile with Cloud Build
+        id: image
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          GCP_CLOUD_RUN_SERVICE: ${{ vars.GCP_CLOUD_RUN_SERVICE }}
+        run: |
+          set -euo pipefail
+          test -s Dockerfile
+          test -s package-lock.json
+          image="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/cloud-run-source-deploy/${GCP_CLOUD_RUN_SERVICE}:${GITHUB_SHA}"
+          echo "Building explicit Dockerfile image: $image"
+          gcloud builds submit . \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --tag="$image" \
+            --timeout=1200s \
+            --quiet
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy the verified Node.js image to Cloud Run
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          GCP_CLOUD_RUN_SERVICE: ${{ vars.GCP_CLOUD_RUN_SERVICE }}
+          GCP_CLOUD_SQL_CONNECTION_NAME: ${{ vars.GCP_CLOUD_SQL_CONNECTION_NAME }}
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          set -euo pipefail
+          test -n "$IMAGE"
+          gcloud run deploy "$GCP_CLOUD_RUN_SERVICE" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --allow-unauthenticated \
+            --update-secrets="MILAN_DATABASE_URL=MILAN_DATABASE_URL:latest" \
+            --update-labels="managed-by=github-actions,commit-sha=${GITHUB_SHA}" \
+            --add-cloudsql-instances="$GCP_CLOUD_SQL_CONNECTION_NAME" \
+            --quiet
 
       - name: Diagnose failed Cloud Build
         if: failure()
