@@ -238,8 +238,11 @@ for (const ignoreFile of ['.gcloudignore', '.dockerignore']) {
 }
 const deployWorkflow = read('.github/workflows/milan-ci.yml');
 check(deployWorkflow.includes('google-github-actions/auth@v3') &&
-  deployWorkflow.includes('google-github-actions/deploy-cloudrun@v3'),
-  'The main pipeline must own the Google Cloud Run deployment path.');
+  deployWorkflow.includes('gcloud builds submit .') &&
+  deployWorkflow.includes('gcloud run deploy') &&
+  deployWorkflow.includes('--tag="$image"') &&
+  !deployWorkflow.includes('google-github-actions/deploy-cloudrun@v3'),
+  'The main pipeline must explicitly build the Node Dockerfile with Cloud Build, then deploy the tagged image to Cloud Run.');
 check(!exists('.github/workflows/milan-gcp-cloud-run.yml'),
   'The old branch-specific GCP workflow must remain retired; main CI is the single deployment path.');
 check(read('.gitignore').includes('gha-creds-*.json') && read('.gcloudignore').includes('gha-creds-*.json'),
