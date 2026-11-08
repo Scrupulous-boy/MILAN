@@ -2,7 +2,6 @@
 # independently by the MILAN Android workflow and must not be detected or
 # copied into the Cloud Run container build.
 .git
-.github
 node_modules
 **/node_modules
 .env
