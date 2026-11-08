@@ -1,3 +1,6 @@
+# Node service build context only. Android Gradle sources are built
+# independently by the MILAN Android workflow and must not be detected or
+# copied into the Cloud Run container build.
 .git
 .github
 node_modules
@@ -7,3 +10,13 @@ node_modules
 !**/.env.example
 gha-creds-*.json
 **/gha-creds-*.json
+/app/
+/android/
+/gradle/
+/build.gradle
+/settings.gradle
+/gradle.properties
+/gradlew
+/gradlew.bat
+**/.gradle/
+**/build/
