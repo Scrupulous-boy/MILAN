@@ -6,13 +6,13 @@ gha-creds-*.json
 **/gha-creds-*.json
 
 # Cloud Run serves the Node.js API/frontend, not the Android Gradle project.
-app/
-android/
-gradle/
-build.gradle
-settings.gradle
-gradle.properties
-gradlew
-gradlew.bat
+/app/
+/android/
+/gradle/
+/build.gradle
+/settings.gradle
+/gradle.properties
+/gradlew
+/gradlew.bat
 **/.gradle/
 **/build/
