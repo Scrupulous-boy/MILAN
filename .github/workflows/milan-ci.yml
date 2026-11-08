@@ -57,6 +57,9 @@ jobs:
       - name: Run project build check
         run: npm run build
 
+      - name: Build the exact Node.js container used by Cloud Run
+        run: docker build --progress=plain --tag milan-cloud-run:ci .
+
       - name: Verify avatar persistence across refresh
         run: npm run test:avatar-persistence
 
