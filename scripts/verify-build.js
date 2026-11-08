@@ -92,6 +92,38 @@ check(homepageHtml.includes('/favicon.ico?v=20261108-brand1') &&
   'Homepage must advertise ICO, SVG and Apple touch icons with the same brand version.');
 check(homepageHtml.includes('<meta property="og:site_name" content="MILAN">'),
   'Homepage Open Graph site name must be the canonical MILAN brand.');
+
+const brandedHtmlPages = [
+  'frontend/404.html', 'frontend/about.html', 'frontend/admin-users.html',
+  'frontend/app.html', 'frontend/best-social-media-apps.html',
+  'frontend/chat/index.html', 'frontend/cookie-policy.html',
+  'frontend/decentralized-social-media-premium.html',
+  'frontend/decentralized-social-media.html', 'frontend/decentralized-social-network.html',
+  'frontend/decentralized-web-node.html', 'frontend/disclaimer.html',
+  'frontend/index.html', 'frontend/keywords.html', 'frontend/launch.html',
+  'frontend/milan-pay.html', 'frontend/music.html', 'frontend/offline.html',
+  'frontend/privacy.html', 'frontend/private-social-network.html',
+  'frontend/reset-password.html', 'frontend/settings.html',
+  'frontend/social-media-privacy.html', 'frontend/storage-upgrade.html',
+  'frontend/terms.html', 'frontend/verify-email.html',
+  'frontend/web5-ecosystem.html', 'frontend/what-is-web5.html',
+  'frontend/who-is-the-founder-of-milan.html'
+];
+for (const file of brandedHtmlPages) {
+  if (!exists(file)) { failures.push('Branded HTML page missing: ' + file); continue; }
+  const document = read(file);
+  check(document.includes('/assets/favicon-96x96.png?v=20261108-brand1') &&
+    document.includes('/favicon.ico?v=20261108-brand1') &&
+    document.includes('/favicon.svg?v=20261108-brand1') &&
+    document.includes('/apple-touch-icon.png?v=20261108-brand1') &&
+    document.includes('/manifest.json'),
+    file + ' must use the complete common MILAN icon set.');
+  if (/<meta\\b[^>]*\\bproperty=["']og:title["']/i.test(document)) {
+    const siteTag = (document.match(/<meta\\b(?=[^>]*\\bproperty=["']og:site_name["'])[^>]*>/i) || [])[0] || '';
+    check(/\\bcontent=["']MILAN["']/i.test(siteTag),
+      file + ' must use the canonical Open Graph site name MILAN.');
+  }
+}
 const pwaManifest = JSON.parse(read('frontend/manifest.json'));
 for (const [size, filename] of [[192, 'favicon-192x192.png'], [512, 'favicon-512x512.png']]) {
   check(pwaManifest.icons.some(icon => icon.sizes === size + 'x' + size && icon.src.includes(filename)),
