@@ -296,7 +296,7 @@ jobs:
                 if (!svg.includes('<svg') || !svg.includes('</svg>')) throw new Error('Invalid SVG icon: ' + file);
               }
               console.log('Verified 7 PNG favicon sizes, Apple 180px touch icon, 5-size ICO and SVG masks.');
-              NODE
+          NODE
               health_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/health)"
               printf '%s' "$health_payload" | node -e 'let raw="";process.stdin.on("data",c=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw);if(p.healthSemantics?.level!=="liveness"||typeof p.healthSemantics?.realDwnProtocol!=="boolean")process.exit(1)}catch(_){process.exit(1)}})'
               pay_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/milan-pay/config)"
