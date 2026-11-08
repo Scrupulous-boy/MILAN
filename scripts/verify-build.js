@@ -27,6 +27,8 @@ const requiredFiles = [
   'docs/MILAN_ONE_ARCHITECTURE.md',
   'docs/ENVIRONMENT_CONTRACT.md',
   'scripts/prepare-favicons.js',
+  'Dockerfile',
+  '.dockerignore',
   'frontend/favicon.svg',
   'frontend/assets/favicon.svg',
   'frontend/safari-pinned-tab.svg',
@@ -217,6 +219,22 @@ if (exists('backend/services/cloudDwnRegistry.js')) {
   const dwn = read('backend/services/cloudDwnRegistry.js');
   check(dwn.includes('realDwnProtocol: false'), 'Current main API must not claim unintegrated DWN protocol readiness.');
   check(dwn.includes('protocolReady: false'), 'DWN status must distinguish logical storage from protocol readiness.');
+}
+const cloudRunDockerfile = read('Dockerfile');
+check(cloudRunDockerfile.includes('FROM node:24-bookworm-slim') &&
+  cloudRunDockerfile.includes('npm ci --omit=dev') &&
+  cloudRunDockerfile.includes('npm run build') &&
+  cloudRunDockerfile.includes('CMD ["npm", "start"]'),
+  'Cloud Run must build the Express service from the explicit Node 24 Dockerfile, not auto-detected Gradle.');
+check(cloudRunDockerfile.includes('FFMPEG_BIN=/usr/bin/ffmpeg') &&
+  cloudRunDockerfile.includes('FFPROBE_BIN=/usr/bin/ffprobe'),
+  'Container install must use the system FFmpeg binaries and avoid release-download hooks.');
+for (const ignoreFile of ['.gcloudignore', '.dockerignore']) {
+  const ignored = read(ignoreFile);
+  for (const pattern of ['/app/', '/android/', '/gradle/', '/build.gradle', '/settings.gradle']) {
+    check(ignored.includes(pattern),
+      ignoreFile + ' must exclude Android/Gradle-only source from the Cloud Run Node service build.');
+  }
 }
 const deployWorkflow = read('.github/workflows/milan-ci.yml');
 check(deployWorkflow.includes('google-github-actions/auth@v3') &&
