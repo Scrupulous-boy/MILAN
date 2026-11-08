@@ -265,6 +265,38 @@ jobs:
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/sitemap_index.xml \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/keywords \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/topics; then
+              for spec in "16 favicon-16x16.png" "32 favicon-32x32.png" "48 favicon-48x48.png" "96 favicon-96x96.png" "180 favicon-180x180.png" "192 favicon-192x192.png" "512 favicon-512x512.png"; do
+                set -- $spec
+                curl -fsSL --max-time 15 "https://milanlife.in/assets/$2" -o "/tmp/milan-$1.png"
+              done
+              curl -fsSL --max-time 15 https://milanlife.in/favicon.ico -o /tmp/milan-favicon.ico
+              curl -fsSL --max-time 15 https://milanlife.in/favicon.svg -o /tmp/milan-favicon.svg
+              curl -fsSL --max-time 15 https://milanlife.in/apple-touch-icon.png -o /tmp/milan-apple-touch-icon.png
+              curl -fsSL --max-time 15 https://milanlife.in/safari-pinned-tab.svg -o /tmp/milan-safari.svg
+              node <<'NODE'
+              const fs = require('node:fs');
+              const sig = Buffer.from([137,80,78,71,13,10,26,10]);
+              for (const size of [16,32,48,96,180,192,512]) {
+                const file = '/tmp/milan-' + size + '.png';
+                const b = fs.readFileSync(file);
+                if (b.length < 24 || !b.subarray(0,8).equals(sig) || b.readUInt32BE(16)!==size || b.readUInt32BE(20)!==size) {
+                  throw new Error('Invalid PNG favicon: ' + file);
+                }
+              }
+              const apple = fs.readFileSync('/tmp/milan-apple-touch-icon.png');
+              if (!apple.subarray(0,8).equals(sig) || apple.readUInt32BE(16)!==180 || apple.readUInt32BE(20)!==180) {
+                throw new Error('Apple touch icon is not a valid 180x180 PNG.');
+              }
+              const ico = fs.readFileSync('/tmp/milan-favicon.ico');
+              if (ico.readUInt16LE(0)!==0 || ico.readUInt16LE(2)!==1 || ico.readUInt16LE(4)!==5) {
+                throw new Error('favicon.ico is not a five-resolution ICO file.');
+              }
+              for (const file of ['/tmp/milan-favicon.svg','/tmp/milan-safari.svg']) {
+                const svg = fs.readFileSync(file,'utf8');
+                if (!svg.includes('<svg') || !svg.includes('</svg>')) throw new Error('Invalid SVG icon: ' + file);
+              }
+              console.log('Verified 7 PNG favicon sizes, Apple 180px touch icon, 5-size ICO and SVG masks.');
+              NODE
               health_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/health)"
               printf '%s' "$health_payload" | node -e 'let raw="";process.stdin.on("data",c=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw);if(p.healthSemantics?.level!=="liveness"||typeof p.healthSemantics?.realDwnProtocol!=="boolean")process.exit(1)}catch(_){process.exit(1)}})'
               pay_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/milan-pay/config)"
