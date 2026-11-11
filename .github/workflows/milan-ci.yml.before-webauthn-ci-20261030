@@ -1,0 +1,183 @@
+name: MILAN • Build & Production Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: milan-live-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  live-source:
+    name: "LIVE • Main branch"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Live source signal
+        run: |
+          echo "🟢 LIVE — main branch update received"
+          echo "Commit: $GITHUB_SHA"
+          echo "Author: $GITHUB_ACTOR"
+          {
+            echo "## 🟢 LIVE — Main branch"
+            echo ""
+            echo "- Commit: `$GITHUB_SHA`"
+            echo "- Actor: `$GITHUB_ACTOR`"
+            echo "- Branch: `main`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  verify:
+    name: "PASS • Build verification"
+    runs-on: ubuntu-latest
+    needs: live-source
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run project build check
+        run: npm run build
+
+      - name: Verify avatar persistence across refresh
+        run: npm run test:avatar-persistence
+
+      - name: Verify video byte-range semantics
+        run: npm run test:video-range
+
+      - name: Verify video scroll playback lifecycle
+        run: npm run test:video-scroll
+
+      - name: Verify resumable media upload behavior
+        # The upload self-tests mock storage; this placeholder satisfies import-time DB URL validation only.
+        env:
+          MILAN_DATABASE_URL: postgres://milan-test:milan-test@127.0.0.1:1/milan_test
+        run: npm run test:upload
+
+      - name: Verify payment idempotency and quota invariants
+        run: npm run test:payment-idempotency
+      - name: Exercise payment ownership and idempotent transitions
+        run: npm run test:payment-idempotency-runtime
+
+      - name: Verify chat architecture
+        run: npm run test:chat
+      - name: Verify feed pagination contract
+        run: npm run test:feed-pagination
+
+      - name: Verify API rate-limit behavior
+        run: npm run test:security
+
+      - name: Verify MILAN Pay architecture
+        run: npm run test:payment
+
+      - name: Verify MILAN Pay checkout details
+        run: npm run test:milan-pay
+
+      - name: Verify persistence failure visibility
+        run: npm run test:persistence-visibility
+
+      - name: Verify AI analytics data boundaries
+        run: npm run test:ai-boundary
+
+      - name: Verify authoritative session revocation
+        run: npm run test:session-token
+
+      - name: Verify shared media limit contract
+        run: npm run test:media-limits
+
+      - name: Verify readiness semantics
+        run: npm run test:readiness
+
+      - name: Verify critical frontend files
+        run: |
+          test -s frontend/app.html
+          test -s frontend/index.html
+          test -s frontend/chat/index.html
+          test -s frontend/milan-core.css
+          test -s frontend/milan-login-pro.css
+          echo "✅ Critical MILAN frontend files present"
+
+      - name: Set up Python for identity-security tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install focused Python test dependencies
+        run: python -m pip install --disable-pip-version-check pytest fastapi requests
+
+      - name: Test Travel Agent identity boundary
+        working-directory: Travel-Agent
+        run: python -m pytest -q tests/test_auth.py
+
+      - name: PASS summary
+        run: |
+          echo "✅ PASS — Build verification completed"
+          {
+            echo "## ✅ PASS — Build verification"
+            echo ""
+            echo "Build and critical frontend file checks completed successfully."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  production:
+    if: github.event_name != 'pull_request'
+    name: "LIVE • Production smoke"
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - name: Wait for production propagation
+        run: |
+          echo "⏳ Waiting for the production deployment to propagate..."
+          sleep 25
+
+      - name: Production smoke check
+        run: |
+          set -e
+          for attempt in $(seq 1 12); do
+            echo "Production check $attempt/12"
+            if curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/ \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/chat/ \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/robots.txt \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/sitemap.xml \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/sitemap-index.xml \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/llms.txt \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/keywords.json \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/ai-info \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/ai-info.json \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/sitemap_index.xml \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/keywords \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/topics; then
+              health_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/health)"
+              printf '%s' "$health_payload" | node -e 'let raw="";process.stdin.on("data",c=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw);if(p.healthSemantics?.level!=="liveness"||typeof p.healthSemantics?.realDwnProtocol!=="boolean")process.exit(1)}catch(_){process.exit(1)}})'
+              pay_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/milan-pay/config)"
+              printf '%s' "$pay_payload" | node -e 'let raw="";process.stdin.on("data",c=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw);if(p.ok!==true||p.verificationMode!=="manual-bank-verification"||p.automaticPaymentConfirmationAvailable!==false||typeof p.merchantVerificationStatus!=="string"||typeof p.upiAvailable!=="boolean"||typeof p.googlePayIosAvailable!=="boolean")process.exit(1)}catch(_){process.exit(1)}})'
+              echo "🟢 LIVE — public UI, health semantics and MILAN Pay status contract are reachable"
+              {
+                echo "## 🟢 LIVE — Production"
+                echo ""
+                echo "Production smoke checks passed:"
+                echo "- / and /chat/"
+                echo "- /robots.txt, /sitemap.xml, /sitemap-index.xml"
+                echo "- /llms.txt, /keywords.json, /ai-info and aliases"
+                echo "- /api/health reports liveness separately from DWN protocol readiness"
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "❌ Production smoke check failed"
+          exit 1

@@ -1,0 +1,66 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const read = file => fs.readFileSync(
+  path.join(__dirname, '..', file),
+  'utf8'
+);
+
+const service = read('backend/services/dwnService.js');
+const routes = read('backend/routes/records.js');
+
+assert.ok(
+  service.includes("substring(m.data_bytes from $2 for $3) AS data_bytes"),
+  'PostgreSQL range query should select the requested byte slice'
+);
+assert.ok(
+  service.includes('m.data_size=$4 AND m.data_cid=$5'),
+  'Range query must guard against changed media size or CID'
+);
+assert.ok(
+  service.includes('byteRange.start + 1'),
+  'Convert the zero-based HTTP offset to PostgreSQL bytea indexing'
+);
+assert.ok(
+  service.includes('byteRange.end - byteRange.start + 1'),
+  'Range query must request the exact inclusive byte count'
+);
+assert.ok(
+  service.includes('buffer.length !== expectedRangeLength'),
+  'Validate the number of bytes returned by PostgreSQL'
+);
+assert.ok(
+  service.includes("includeBytes && !byteRange && expectedCid.startsWith('sha256:')"),
+  'Full-file reads must retain their SHA-256 verification'
+);
+assert.ok(
+  service.includes("getAuthoritativeCloudMedia(recordId, readerDid, { includeBytes: false })"),
+  'Playback URL lookup must not request the video payload'
+);
+assert.ok(
+  routes.includes("metadataOnly: req.method === 'HEAD' || !!req.headers.range"),
+  'HEAD and Range requests should first fetch metadata only'
+);
+assert.ok(
+  routes.includes('byteRange: {'),
+  'The parsed HTTP range must be passed to the storage read'
+);
+assert.ok(
+  routes.includes('media.byteRange.start !== parsed.start') &&
+  routes.includes('media.byteRange.end !== parsed.end'),
+  'Response must verify that returned range matches the requested range'
+);
+assert.ok(
+  routes.includes("res.setHeader('Content-Range', `bytes */${total}`)"),
+  'Unsatisfiable ranges must include the required Content-Range header'
+);
+
+console.log('PASS: PostgreSQL range query selects bounded bytes.');
+console.log('PASS: size and CID guard range reads.');
+console.log('PASS: HTTP and PostgreSQL byte offsets/counts are checked.');
+console.log('PASS: full-file SHA-256 verification remains in place.');
+console.log('PASS: playback URL, HEAD and range paths avoid unnecessary payload reads.');
+console.log('ALL POSTGRES MEDIA RANGE CONTRACT TESTS PASSED.');
