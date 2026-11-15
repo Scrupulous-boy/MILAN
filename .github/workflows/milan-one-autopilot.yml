@@ -247,8 +247,8 @@ jobs:
               if next_heading:
                   tail = tail[:len(gate_heading) + next_heading.start()]
               return tail.strip()
-          old_gates = release_gate_section(before)
-          new_gates = release_gate_section(after)
+          old_gates = release_gate_section(old)
+          new_gates = release_gate_section(new)
           if old_gates != new_gates:
               raise SystemExit("Operator-owned production release gates cannot be changed by an automated task.")
 
