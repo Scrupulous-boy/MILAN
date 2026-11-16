@@ -81,6 +81,17 @@ assert(page.includes('/api/cashfree/config') &&
 assert(page.includes('https://sdk.cashfree.com/js/v3/cashfree.js') &&
        page.includes('redirectTarget: "_self"'),
   'Cashfree hosted SDK must use the documented browser checkout flow');
+
+assert(page.includes('const maxAttempts = 3') &&
+       page.includes('const timeoutMs = 15000') &&
+       page.includes('existingScript.remove()') &&
+       page.includes('script.remove()'),
+  'Cashfree SDK loader must use bounded retries and remove failed script elements');
+assert(page.includes('window.setTimeout(resolve, 400 * attempt)') &&
+       page.includes('cashfreeSdkPromise = null'),
+  'Cashfree SDK loader must back off between attempts and reset for a later user retry');
+assert(!page.includes('script.crossOrigin = "anonymous"'),
+  'Cashfree SDK must not force a cross-origin CORS mode unsupported by the documented embed');
 assert(page.includes('data.status === "paid"') &&
        page.includes('Payment confirmed by Cashfree'),
   'Browser must only show completion after server verification');
