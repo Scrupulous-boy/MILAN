@@ -1,7 +1,7 @@
 {
   "name": "milan-decentralized-social-space",
   "version": "70.0.0",
-  "description": "MILAN application and MILAN-ONE ecosystem workspace; static HTML/CSS/JS frontend, Express API, Voroa PostgreSQL persistence, and experimental companion components.",
+  "description": "MILAN application and MILAN-ONE ecosystem workspace; static HTML/CSS/JS frontend, Express API, PostgreSQL persistence, and experimental companion components.",
   "main": "backend/server.js",
   "scripts": {
     "start": "node -r ./backend/services/avatar-hydration-guard.js backend/server.js",
@@ -31,7 +31,7 @@
     "test:cashfree-gateway": "node scripts/cashfree-gateway-self-test.js",
     "test:cashfree-route": "node scripts/cashfree-route-self-test.js",
     "test:cashfree": "npm run test:cashfree-gateway && npm run test:cashfree-route",
-    "test:webauthn": "node scripts/webauthn-voroa-self-test.js",
+    "test:webauthn": "node scripts/webauthn-self-test.js",
     "prestart": "node scripts/prepare-favicons.js"
   },
   "dependencies": {
