@@ -605,6 +605,18 @@ app.get('/sitemap.xml', (_req, res) => {
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>${PUBLIC_BASE_URL}/decentralized-web-node</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>${PUBLIC_BASE_URL}/web5-ecosystem</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>${PUBLIC_BASE_URL}/social-media-privacy</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
@@ -695,6 +707,9 @@ app.get(['/decentralized-social-media', '/decentralized-social-network', '/own-y
 app.get(['/private-social-network', '/whatsapp-alternative', '/instagram-alternative', '/facebook-alternative', '/no-tracking-social-app', '/ad-free-social-network', '/private-social-app-india'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/private-social-network.html')));
 app.get(['/best-social-media-apps', '/best-social-media', '/best-privacy-social-apps', '/best-social-media-app-2026'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/best-social-media-apps.html')));
 app.get(['/what-is-web5', '/web5', '/web5-explained', '/dwn-did-explained'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/what-is-web5.html')));
+app.get('/decentralized-web-node', (_req, res) => res.sendFile(path.join(__dirname, '../frontend/decentralized-web-node.html')));
+app.get('/web5-ecosystem', (_req, res) => res.sendFile(path.join(__dirname, '../frontend/web5-ecosystem.html')));
+app.get('/who-is-the-founder-of-milan', (_req, res) => res.redirect(301, '/about'));
 app.get(['/social-media-privacy', '/privacy-guide', '/self-sovereign-identity', '/social-media-data-privacy', '/stop-social-media-tracking'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/social-media-privacy.html')));
 
 // ── City hubs: decentralized social by metro (unique local content, self-canonical, NOT doorway pages) ──
