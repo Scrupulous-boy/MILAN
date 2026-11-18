@@ -99,8 +99,7 @@ const brandedHtmlPages = [
   'frontend/404.html', 'frontend/about.html', 'frontend/admin-users.html',
   'frontend/app.html', 'frontend/best-social-media-apps.html',
   'frontend/chat/index.html', 'frontend/cookie-policy.html',
-  'frontend/decentralized-social-media-premium.html',
-  'frontend/decentralized-social-media.html', 'frontend/decentralized-social-network.html',
+  'frontend/decentralized-social-media.html',
   'frontend/decentralized-web-node.html', 'frontend/disclaimer.html',
   'frontend/index.html', 'frontend/keywords.html', 'frontend/launch.html',
   'frontend/milan-pay.html', 'frontend/music.html', 'frontend/offline.html',
@@ -109,7 +108,6 @@ const brandedHtmlPages = [
   'frontend/social-media-privacy.html', 'frontend/storage-upgrade.html',
   'frontend/terms.html', 'frontend/verify-email.html',
   'frontend/web5-ecosystem.html', 'frontend/what-is-web5.html',
-  'frontend/who-is-the-founder-of-milan.html'
 ];
 for (const file of brandedHtmlPages) {
   if (!exists(file)) { failures.push('Branded HTML page missing: ' + file); continue; }

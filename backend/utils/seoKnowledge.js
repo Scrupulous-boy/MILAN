@@ -249,7 +249,7 @@ const PAGES = [
     "intent": "informational"
   },
   {
-    "url": "/decentralized-social-network",
+    "url": "/decentralized-social-media",
     "name": "Decentralized Social Network",
     "type": "WebPage",
     "intent": "informational"
@@ -299,12 +299,6 @@ const PAGES = [
   {
     "url": "/about",
     "name": "About MILAN",
-    "type": "AboutPage",
-    "intent": "navigational"
-  },
-  {
-    "url": "/who-is-the-founder-of-milan",
-    "name": "Who Is the Founder of MILAN?",
     "type": "AboutPage",
     "intent": "navigational"
   },
