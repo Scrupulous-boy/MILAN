@@ -97,7 +97,7 @@ body_base = {
 
 models = [
     os.getenv("OPENAI_MODEL", "gpt-5.6-luna"),
-    "gpt-5.3-codex",
+    "gpt-6-luna",
 ]
 
 GEMINI_MODELS = [
@@ -278,9 +278,15 @@ if data is None and os.environ.get("GEMINI_API_KEY"):
         except Exception as e:
             print(f"Gemini unavailable ({gemini_model}): {type(e).__name__}: {e}")
 
-if data is None:
-    print("AI unavailable this cycle; safely skipping code generation.")
-    sys.exit(0)
+if data is None and os.environ.get("OPENAI_API_KEY"):
+    for openai_model in models:
+        try:
+            print(f"Trying OpenAI model: {openai_model}")
+            data = ask(openai_model)
+            print(f"OpenAI model selected: {openai_model}")
+            break
+        except Exception as e:
+            print(f"OpenAI unavailable ({openai_model}): {type(e).__name__}: {e}")
 
 if data is None:
     print("AI unavailable this cycle; safely skipping code generation.")
