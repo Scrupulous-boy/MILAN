@@ -58,7 +58,7 @@ def snapshot():
     return "".join(files)[:85000]
 
 PROMPT = """You are the autonomous UI engineer for MILAN.
-Repository: Ignite-boy/MILAN
+Repository: Scrupulous-boy/MILAN
 Only improve the production frontend.
 
 Rules:
@@ -109,9 +109,9 @@ GEMINI_MODELS = [
     "gemini-3.1-flash-lite",
 ]
 
-def ask_gemini(model):
+def ask_gemini(model, prompt=None):
     body = {
-        "contents": [{"parts": [{"text": body_base["input"]}]}],
+        "contents": [{"parts": [{"text": prompt or body_base["input"]}]}],
         "generationConfig": {
             "maxOutputTokens": body_base["max_output_tokens"],
             "thinkingConfig": {"thinkingLevel": "medium"},
@@ -259,11 +259,15 @@ def ask(model):
     raise RuntimeError("OpenAI request failed")
 
 data = None
+selected_provider = None
+selected_model = None
 
 if os.environ.get("OPENROUTER_API_KEY"):
     try:
         print("Trying model: openrouter/free")
         data = ask_openrouter()
+        selected_provider = "openrouter"
+        selected_model = "openrouter/free"
         print("OpenRouter model selected: openrouter/free")
     except Exception as e:
         print(f"OpenRouter unavailable: {type(e).__name__}: {e}")
@@ -273,6 +277,8 @@ if data is None and os.environ.get("GEMINI_API_KEY"):
         try:
             print(f"Trying model: {gemini_model}")
             data = ask_gemini(gemini_model)
+            selected_provider = "gemini"
+            selected_model = gemini_model
             print(f"Gemini model selected: {gemini_model}")
             break
         except Exception as e:
@@ -283,6 +289,8 @@ if data is None and os.environ.get("OPENAI_API_KEY"):
         try:
             print(f"Trying OpenAI model: {openai_model}")
             data = ask(openai_model)
+            selected_provider = "openai"
+            selected_model = openai_model
             print(f"OpenAI model selected: {openai_model}")
             break
         except Exception as e:
@@ -292,56 +300,58 @@ if data is None:
     print("AI unavailable this cycle; safely skipping code generation.")
     sys.exit(0)
 
-parts = []
+def response_text(response):
+    parts = []
 
-for choice in data.get("choices", []):
-    message = choice.get("message", {})
-    content = message.get("content")
-    if isinstance(content, str):
-        parts.append(content)
-    elif isinstance(content, list):
-        for item in content:
-            if isinstance(item, dict) and isinstance(item.get("text"), str):
-                parts.append(item["text"])
+    for choice in response.get("choices", []):
+        message = choice.get("message", {})
+        content = message.get("content")
+        if isinstance(content, str):
+            parts.append(content)
+        elif isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict) and isinstance(item.get("text"), str):
+                    parts.append(item["text"])
 
-if isinstance(data.get("output_text"), str):
-    parts.append(data["output_text"])
+    if isinstance(response.get("output_text"), str):
+        parts.append(response["output_text"])
 
-for item in data.get("output", []):
-    for content in item.get("content", []):
-        if isinstance(content, dict) and isinstance(content.get("text"), str):
-            parts.append(content["text"])
+    for item in response.get("output", []):
+        for content in item.get("content", []):
+            if isinstance(content, dict) and isinstance(content.get("text"), str):
+                parts.append(content["text"])
 
-for candidate in data.get("candidates", []):
-    content = candidate.get("content", {})
-    for part in content.get("parts", []):
-        if isinstance(part, dict) and isinstance(part.get("text"), str):
-            parts.append(part["text"])
+    for candidate in response.get("candidates", []):
+        content = candidate.get("content", {})
+        for part in content.get("parts", []):
+            if isinstance(part, dict) and isinstance(part.get("text"), str):
+                parts.append(part["text"])
 
-text = "\n".join(parts).strip()
+    return "\n".join(parts).strip()
 
-summary = ""
-commit_title = ""
-patch = ""
 
-try:
-    json_text = text
-    fenced = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.S)
-    if fenced:
-        json_text = fenced.group(1)
-    payload = json.loads(json_text)
+def response_payload(response):
+    raw = response_text(response)
+    try:
+        json_text = raw
+        fenced = re.search(r"```(?:json)?\s*(\{.*\})\s*```", raw, re.S)
+        if fenced:
+            json_text = fenced.group(1)
+        payload = json.loads(json_text)
+        return payload if isinstance(payload, dict) else {}
+    except (TypeError, ValueError):
+        return {}
 
-    if isinstance(payload, dict):
-        decision = str(payload.get("decision", "")).strip().upper()
-        summary = str(payload.get("summary", "")).strip()
-        commit_title = str(payload.get("commit_title", "")).strip()
-        patch = str(payload.get("patch", "")).strip()
 
-        if decision == "NO_CHANGE":
-            print("NO_CHANGE")
-            sys.exit(0)
-except Exception:
-    pass
+payload = response_payload(data)
+decision = str(payload.get("decision", "")).strip().upper()
+summary = str(payload.get("summary", "")).strip()
+commit_title = str(payload.get("commit_title", "")).strip()
+patch = str(payload.get("patch", "")).strip()
+
+if decision == "NO_CHANGE":
+    print("NO_CHANGE")
+    sys.exit(0)
 
 recent_titles = []
 try:
@@ -371,13 +381,16 @@ if commit_title.lower() in {
     print("AI returned a generic commit_title; rejecting this attempt:", commit_title)
     sys.exit(0)
 
-if commit_title.lower().startswith(("feat(ui):", "fix(ui):", "chore(ui):")):
-    print("AI commit_title incorrectly contains a commit prefix; rejecting this attempt:", commit_title)
-    sys.exit(0)
+commit_title = re.sub(
+    r"^(?:feat|fix|chore)\(ui\):\s*",
+    "",
+    commit_title,
+    flags=re.I,
+).strip()
 
 normalized_recent = set()
 for subject in recent_titles:
-    subject = re.sub(r"^feat\(ui\):\s*", "", subject)
+    subject = re.sub(r"^(?:feat|fix|chore)\(ui\):\s*", "", subject, flags=re.I)
     subject = re.sub(r"^\[cycle-[0-9]+\]\s*", "", subject)
     normalized_recent.add(subject.strip().lower())
 
@@ -407,19 +420,97 @@ if patch.startswith("```") and patch.endswith("```"):
 patch_file = Path("/tmp/milan-ai.patch")
 patch_file.write_text(patch + "\n", encoding="utf-8")
 
-check = subprocess.run(
-    ["git", "apply", "--check", str(patch_file)],
-    cwd=ROOT,
-    text=True,
-    capture_output=True,
-)
+def target_file_context(candidate_patch):
+    paths = sorted(set(
+        re.findall(r"^\+\+\+ b/(frontend/[^\r\n]+)$", candidate_patch, re.M)
+        + re.findall(r"^--- a/(frontend/[^\r\n]+)$", candidate_patch, re.M)
+    ))
+    chunks = []
+    for rel in paths[:3]:
+        if not ALLOWED.match(rel):
+            continue
+        target = ROOT / rel
+        if not target.is_file():
+            continue
+        content = target.read_text(encoding="utf-8", errors="ignore")
+        if len(content) > 26000:
+            content = content[:13000] + "\n...[middle omitted; use the exact surrounding context from the supplied source]...\n" + content[-13000:]
+        chunks.append(f"\n===== CURRENT EXACT FILE: {rel} =====\n{content}")
+    return "\n".join(chunks)
+
+
+def check_patch(candidate_patch):
+    patch_file.write_text(candidate_patch.rstrip() + "\n", encoding="utf-8")
+    return subprocess.run(
+        ["git", "apply", "--check", "--whitespace=error", str(patch_file)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+
+
+check = check_patch(patch)
+for repair_attempt in range(1, 3):
+    if check.returncode == 0:
+        break
+
+    print(f"Patch validation failed; requesting Gemini repair {repair_attempt}/2.")
+    if selected_provider != "gemini" or not selected_model:
+        break
+
+    repair_prompt = (
+        body_base["input"]
+        + "\n\nTHE PREVIOUS PATCH FAILED VALIDATION. DO NOT REPEAT IT.\n"
+        + "git apply --check output:\n"
+        + check.stderr[:5000]
+        + "\nPrevious rejected patch:\n"
+        + patch[:16000]
+        + "\nCurrent exact contents of target file(s):\n"
+        + target_file_context(patch)
+        + "\nReturn ONLY the required JSON object. Keep decision=CHANGE, preserve the same intended UI improvement, "
+        + "and return a corrected unified diff that applies exactly to the current file contents shown above. "
+        + "Use exact lines and correct hunk line numbers. Do not include Markdown fences. "
+        + "commit_title must be plain title text without feat(ui):, fix(ui):, or chore(ui): prefix."
+    )
+
+    try:
+        repaired_response = ask_gemini(selected_model, prompt=repair_prompt)
+        repaired = response_payload(repaired_response)
+        if str(repaired.get("decision", "")).strip().upper() == "NO_CHANGE":
+            print("Gemini repair returned NO_CHANGE; safely skipping this cycle.")
+            sys.exit(0)
+
+        repaired_summary = str(repaired.get("summary", "")).strip()
+        repaired_title = str(repaired.get("commit_title", "")).strip()
+        repaired_patch = str(repaired.get("patch", "")).strip()
+
+        repaired_title = re.sub(
+            r"^(?:feat|fix|chore)\(ui\):\s*",
+            "",
+            repaired_title,
+            flags=re.I,
+        ).strip()
+
+        if repaired_summary:
+            summary = repaired_summary
+        if repaired_title:
+            commit_title = repaired_title
+        if repaired_patch:
+            patch = repaired_patch
+            check = check_patch(patch)
+        else:
+            print("Gemini repair response contained no patch.")
+            break
+    except Exception as exc:
+        print(f"Gemini patch repair failed: {type(exc).__name__}: {exc}")
+        break
 
 if check.returncode != 0:
-    print("Patch rejected by git --check; skipping.")
-    print(check.stderr[:1500])
+    print("Patch rejected after repair attempts; no files changed.")
+    print(check.stderr[:2500])
     sys.exit(0)
 
-subprocess.run(["git", "apply", str(patch_file)], cwd=ROOT, check=True)
+subprocess.run(["git", "apply", "--whitespace=error", str(patch_file)], cwd=ROOT, check=True)
 
 changed = subprocess.check_output(
     ["git", "diff", "--name-only"],
@@ -435,6 +526,21 @@ if bad:
 
 if not changed:
     print("NO_CHANGE")
+    sys.exit(0)
+
+commit_title = re.sub(
+    r"^(?:feat|fix|chore)\(ui\):\s*",
+    "",
+    commit_title,
+    flags=re.I,
+).strip()
+if not commit_title or commit_title.lower() in {"improve milan ui", "improve ui", "ui update", "update ui"}:
+    print("Repaired result has no specific commit title; refusing automatic commit.")
+    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=ROOT, check=True)
+    sys.exit(0)
+if commit_title.lower() in normalized_recent:
+    print("Repaired result duplicates a recent UI commit title; refusing automatic commit.")
+    subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=ROOT, check=True)
     sys.exit(0)
 
 Path("/tmp/milan-ai-summary").write_text(summary[:180], encoding="utf-8")
