@@ -1,6 +1,12 @@
 name: MILAN UI Planner
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Live-UI-Update/scripts/milan_ai_update.py"
+      - ".github/workflows/milan-ui-plan.yml"
   schedule:
     - cron: "*/30 * * * *"
   workflow_dispatch:
@@ -60,8 +66,14 @@ jobs:
 
           if git diff --quiet; then
             echo "NO_UI_CHANGE=true" >> "$GITHUB_ENV"
-            echo "No valid UI change generated; this manual planner run is ending without a commit."
-            exit 0
+            {
+              echo "## UI Planner: no verified UI change"
+              echo ""
+              echo "Gemini did not produce a patch that passed validation after three attempts."
+              echo "No source files were changed, committed, merged, or deployed."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::No verified UI change was produced after three attempts."
+            exit 1
           fi
           echo "NO_UI_CHANGE=false" >> "$GITHUB_ENV"
 
