@@ -564,12 +564,6 @@ app.get('/sitemap.xml', (_req, res) => {
     </image:image>
   </url>
   <url>
-    <loc>${PUBLIC_BASE_URL}/app</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>${PUBLIC_BASE_URL}/music</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
@@ -646,12 +640,6 @@ app.get('/sitemap.xml', (_req, res) => {
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>${PUBLIC_BASE_URL}/keywords</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>${PUBLIC_BASE_URL}/llms.txt</loc>
