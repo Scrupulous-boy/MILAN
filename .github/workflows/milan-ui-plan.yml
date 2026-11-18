@@ -26,7 +26,7 @@ jobs:
         env:
           MILAN_GH_TOKEN: ${{ secrets.MILAN_GH_TOKEN }}
         run: |
-          git clone "https://github.com/Ignite-boy/MILAN.git" milan
+          git clone "https://github.com/Scrupulous-boy/MILAN.git" milan
           cd milan
           git config user.name "MILAN Live UI Bot"
           git config user.email "bot@milanlife.in"
@@ -121,7 +121,7 @@ jobs:
           echo "COMMIT_NAME=$COMMIT_NAME" >> "$GITHUB_ENV"
           echo "COMMIT_SHA=$COMMIT_SHA" >> "$GITHUB_ENV"
 
-          git push "https://x-access-token:${MILAN_GH_TOKEN}@github.com/Ignite-boy/MILAN.git" "$BRANCH"
+          git push "https://x-access-token:${MILAN_GH_TOKEN}@github.com/Scrupulous-boy/MILAN.git" "$BRANCH"
 
           echo "AI COMMIT TITLE: $COMMIT_TITLE"
           echo "FULL COMMIT NAME: $COMMIT_NAME"
@@ -135,7 +135,7 @@ jobs:
         run: |
           for attempt in 1 2 3 4 5; do
             if gh workflow run milan-live-auto.yml \
-              --repo Ignite-boy/MILAN \
+              --repo Scrupulous-boy/MILAN \
               --ref main \
               -f run_name="$COMMIT_TITLE" \
               -f auto_branch="$AUTO_BRANCH" \

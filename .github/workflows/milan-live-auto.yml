@@ -42,7 +42,7 @@ jobs:
 
       - name: Prepare MILAN workspace
         run: |
-          git clone "https://github.com/Ignite-boy/MILAN.git" milan
+          git clone "https://github.com/Scrupulous-boy/MILAN.git" milan
           cd milan
           git config user.name "MILAN Live UI Bot"
           git config user.email "bot@milanlife.in"
@@ -80,7 +80,7 @@ jobs:
         run: |
           COMMIT_NAME="feat(ui): $RUN_NAME"
           gh pr create \
-            --repo Ignite-boy/MILAN \
+            --repo Scrupulous-boy/MILAN \
             --base main \
             --head "$AUTO_BRANCH" \
             --title "$COMMIT_NAME" \
@@ -111,7 +111,7 @@ jobs:
           set -euo pipefail
 
           PR_NUMBER="$(gh pr list \
-            --repo Ignite-boy/MILAN \
+            --repo Scrupulous-boy/MILAN \
             --head "$AUTO_BRANCH" \
             --base main \
             --state open \
@@ -122,12 +122,12 @@ jobs:
 
           echo "Waiting for CI checks on PR #$PR_NUMBER"
           gh pr checks "$PR_NUMBER" \
-            --repo Ignite-boy/MILAN \
+            --repo Scrupulous-boy/MILAN \
             --watch \
             --interval 10
 
           META="$(gh pr view "$PR_NUMBER" \
-            --repo Ignite-boy/MILAN \
+            --repo Scrupulous-boy/MILAN \
             --json state,headRefOid,baseRefName,isDraft \
             --jq '[.state, .headRefOid, .baseRefName, (.isDraft | tostring)] | @tsv')"
 
@@ -139,7 +139,7 @@ jobs:
           test "$PR_DRAFT" = "false"
 
           CHECKS_JSON="$(gh api \
-            "repos/Ignite-boy/MILAN/commits/$PR_SHA/check-runs?per_page=100")"
+            "repos/Scrupulous-boy/MILAN/commits/$PR_SHA/check-runs?per_page=100")"
 
           for REQUIRED in \
             "PASS • Build verification" \
@@ -169,10 +169,10 @@ jobs:
           RUN_NAME: ${{ inputs.run_name }}
         run: |
           COMMIT_NAME="feat(ui): $RUN_NAME"
-          PR_NUMBER="$(gh pr list --repo Ignite-boy/MILAN --head "$AUTO_BRANCH" --base main --state open --json number --jq '.[0].number')"
+          PR_NUMBER="$(gh pr list --repo Scrupulous-boy/MILAN --head "$AUTO_BRANCH" --base main --state open --json number --jq '.[0].number')"
           test -n "$PR_NUMBER"
 
-          gh pr merge "$PR_NUMBER" --repo Ignite-boy/MILAN --squash --delete-branch
+          gh pr merge "$PR_NUMBER" --repo Scrupulous-boy/MILAN --squash --delete-branch
 
           git fetch origin main
           MERGED_COMMIT_NAME="$(git log origin/main -1 --pretty=%s)"
