@@ -14,24 +14,24 @@ permissions:
 
 concurrency:
   group: milan-live-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   live-source:
-    name: "LIVE • Main branch"
+    name: "Source event received"
     runs-on: ubuntu-latest
     steps:
       - name: Live source signal
         run: |
-          echo "🟢 LIVE — main branch update received"
+          echo "Workflow event received"
           echo "Commit: $GITHUB_SHA"
           echo "Author: $GITHUB_ACTOR"
           {
-            echo "## 🟢 LIVE — Main branch"
+            echo "## Source event received"
             echo ""
             echo "- Commit: `$GITHUB_SHA`"
             echo "- Actor: `$GITHUB_ACTOR`"
-            echo "- Branch: `main`"
+            echo "- Ref: `$GITHUB_REF`"
           } >> "$GITHUB_STEP_SUMMARY"
 
   verify:
@@ -40,10 +40,10 @@ jobs:
     needs: live-source
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -51,8 +51,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit dependency vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Run project build check
         run: npm run build
+
+      - name: Build the exact Node.js container used by Cloud Run
+        run: docker build --progress=plain --tag milan-cloud-run:ci .
 
       - name: Verify avatar persistence across refresh
         run: npm run test:avatar-persistence
@@ -80,6 +86,9 @@ jobs:
 
       - name: Verify chat architecture
         run: npm run test:chat
+
+      - name: Verify WebAuthn PostgreSQL contracts
+        run: npm run test:webauthn
       - name: Verify feed pagination contract
         run: npm run test:feed-pagination
 
@@ -92,7 +101,10 @@ jobs:
       - name: Verify MILAN Pay architecture
         run: npm run test:payment
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
       - name: Verify persistence failure visibility
         run: npm run test:persistence-visibility
 
@@ -117,8 +129,13 @@ jobs:
           test -s frontend/milan-login-pro.css
           echo "✅ Critical MILAN frontend files present"
 
+<<<<<<< HEAD
       - name: Set up Python for full Travel-Agent tests
         uses: actions/setup-python@v5
+=======
+      - name: Set up Python for identity-security tests
+        uses: actions/setup-python@v7
+>>>>>>> origin/main
         with:
           python-version: "3.13"
 
@@ -138,11 +155,116 @@ jobs:
             echo "Build and critical frontend file checks completed successfully."
           } >> "$GITHUB_STEP_SUMMARY"
 
-  production:
-    if: github.event_name != 'pull_request'
-    name: "LIVE • Production smoke"
-    runs-on: ubuntu-latest
+  deploy:
+    name: Deploy MILAN to Google Cloud Run
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
     needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout verified main commit
+        uses: actions/checkout@v7
+
+      - name: Check guarded GCP release configuration
+        env:
+          GCP_DEPLOY_ENABLED: ${{ vars.GCP_DEPLOY_ENABLED }}
+          GCP_DATABASE_READY: ${{ vars.GCP_DATABASE_READY }}
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_DEPLOYER_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          GCP_CLOUD_RUN_SERVICE: ${{ vars.GCP_CLOUD_RUN_SERVICE }}
+          GCP_CLOUD_SQL_CONNECTION_NAME: ${{ vars.GCP_CLOUD_SQL_CONNECTION_NAME }}
+        run: |
+          set -euo pipefail
+          [[ "$GCP_DEPLOY_ENABLED" == "true" ]] || { echo "::error::GCP_DEPLOY_ENABLED must be true for a main-branch release."; exit 1; }
+          [[ "$GCP_DATABASE_READY" == "true" ]] || { echo "::error::GCP_DATABASE_READY must be true before deployment."; exit 1; }
+          for name in GCP_PROJECT_ID GCP_WORKLOAD_IDENTITY_PROVIDER GCP_DEPLOYER_SERVICE_ACCOUNT GCP_REGION GCP_CLOUD_RUN_SERVICE GCP_CLOUD_SQL_CONNECTION_NAME; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::$name is not configured."
+              exit 1
+            fi
+          done
+
+      - name: Authenticate to Google Cloud with Workload Identity Federation
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Build the explicit Node.js Dockerfile with Cloud Build
+        id: image
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          GCP_CLOUD_RUN_SERVICE: ${{ vars.GCP_CLOUD_RUN_SERVICE }}
+        run: |
+          set -euo pipefail
+          test -s Dockerfile
+          test -s package-lock.json
+          image="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/cloud-run-source-deploy/${GCP_CLOUD_RUN_SERVICE}:${GITHUB_SHA}"
+          echo "Building explicit Dockerfile image: $image"
+          gcloud builds submit . \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --tag="$image" \
+            --timeout=1200s \
+            --quiet
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy the verified Node.js image to Cloud Run
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          GCP_CLOUD_RUN_SERVICE: ${{ vars.GCP_CLOUD_RUN_SERVICE }}
+          GCP_CLOUD_SQL_CONNECTION_NAME: ${{ vars.GCP_CLOUD_SQL_CONNECTION_NAME }}
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          set -euo pipefail
+          test -n "$IMAGE"
+          gcloud run deploy "$GCP_CLOUD_RUN_SERVICE" \
+            --project="$GCP_PROJECT_ID" \
+            --region="$GCP_REGION" \
+            --image="$IMAGE" \
+            --allow-unauthenticated \
+            --update-secrets="MILAN_DATABASE_URL=MILAN_DATABASE_URL:latest" \
+            --update-labels="managed-by=github-actions,commit-sha=${GITHUB_SHA}" \
+            --add-cloudsql-instances="$GCP_CLOUD_SQL_CONNECTION_NAME" \
+            --quiet
+
+      - name: Diagnose failed Cloud Build
+        if: failure()
+        continue-on-error: true
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+        run: |
+          set +e
+          echo "Recent Cloud Build history in $GCP_REGION:"
+          gcloud builds list --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+            --limit=5 --sort-by=~createTime \
+            --format="table(id,status,createTime,logUrl)"
+          BUILD_ID="$(gcloud builds list --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+            --limit=1 --sort-by=~createTime --filter='status=FAILURE' --format='value(id)' 2>/dev/null | head -n1)"
+          if [[ -n "$BUILD_ID" ]]; then
+            echo "===== Cloud Build failure details: $BUILD_ID ====="
+            gcloud builds describe "$BUILD_ID" --project="$GCP_PROJECT_ID" --region="$GCP_REGION" \
+              --format="yaml(id,status,createTime,logUrl,results,steps)"
+            echo "===== Cloud Build step logs ====="
+            gcloud builds log "$BUILD_ID" --project="$GCP_PROJECT_ID" --region="$GCP_REGION"
+          else
+            echo "No failed build found in $GCP_REGION. Check the Cloud Run build history in Cloud Console."
+          fi
+
+  production:
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
+    name: "LIVE • Post-deploy production smoke"
+    runs-on: ubuntu-latest
+    needs: [verify, deploy]
     steps:
       - name: Wait for production propagation
         run: |
@@ -154,7 +276,23 @@ jobs:
           set -e
           for attempt in $(seq 1 12); do
             echo "Production check $attempt/12"
-            if curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/ \
+            if curl -fsSL --max-time 15 -o /tmp/milan-home.html https://milanlife.in/ \
+              && grep -Fq '/assets/favicon-96x96.png?v=20261108-brand1' /tmp/milan-home.html \
+              && grep -Fq '<meta property="og:site_name" content="MILAN">' /tmp/milan-home.html \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/favicon.ico \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/favicon.svg \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/apple-touch-icon.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/safari-pinned-tab.svg \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/browserconfig.xml \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-16x16.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-32x32.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-48x48.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-96x96.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-180x180.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-192x192.png \
+              && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/assets/favicon-512x512.png \
+              && curl -fsSL --max-time 15 -o /tmp/milan-manifest.json https://milanlife.in/manifest.json \
+              && node -e 'const m=require("/tmp/milan-manifest.json"); for (const n of [192,512]) if (!m.icons.some(i=>i.sizes===n+"x"+n)) process.exit(1)' \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/chat/ \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/robots.txt \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/sitemap.xml \
@@ -166,16 +304,51 @@ jobs:
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/sitemap_index.xml \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/keywords \
               && curl -fsSL --max-time 15 -o /dev/null https://milanlife.in/topics; then
+              for spec in "16 favicon-16x16.png" "32 favicon-32x32.png" "48 favicon-48x48.png" "96 favicon-96x96.png" "180 favicon-180x180.png" "192 favicon-192x192.png" "512 favicon-512x512.png"; do
+                set -- $spec
+                curl -fsSL --max-time 15 "https://milanlife.in/assets/$2" -o "/tmp/milan-$1.png"
+              done
+              curl -fsSL --max-time 15 https://milanlife.in/favicon.ico -o /tmp/milan-favicon.ico
+              curl -fsSL --max-time 15 https://milanlife.in/favicon.svg -o /tmp/milan-favicon.svg
+              curl -fsSL --max-time 15 https://milanlife.in/apple-touch-icon.png -o /tmp/milan-apple-touch-icon.png
+              curl -fsSL --max-time 15 https://milanlife.in/safari-pinned-tab.svg -o /tmp/milan-safari.svg
+              node <<'NODE'
+              const fs = require('node:fs');
+              const sig = Buffer.from([137,80,78,71,13,10,26,10]);
+              for (const size of [16,32,48,96,180,192,512]) {
+                const file = '/tmp/milan-' + size + '.png';
+                const b = fs.readFileSync(file);
+                if (b.length < 24 || !b.subarray(0,8).equals(sig) || b.readUInt32BE(16)!==size || b.readUInt32BE(20)!==size) {
+                  throw new Error('Invalid PNG favicon: ' + file);
+                }
+              }
+              const apple = fs.readFileSync('/tmp/milan-apple-touch-icon.png');
+              if (!apple.subarray(0,8).equals(sig) || apple.readUInt32BE(16)!==180 || apple.readUInt32BE(20)!==180) {
+                throw new Error('Apple touch icon is not a valid 180x180 PNG.');
+              }
+              const ico = fs.readFileSync('/tmp/milan-favicon.ico');
+              if (ico.readUInt16LE(0)!==0 || ico.readUInt16LE(2)!==1 || ico.readUInt16LE(4)!==5) {
+                throw new Error('favicon.ico is not a five-resolution ICO file.');
+              }
+              for (const file of ['/tmp/milan-favicon.svg','/tmp/milan-safari.svg']) {
+                const svg = fs.readFileSync(file,'utf8');
+                if (!svg.includes('<svg') || !svg.includes('</svg>')) throw new Error('Invalid SVG icon: ' + file);
+              }
+              console.log('Verified 7 PNG favicon sizes, Apple 180px touch icon, 5-size ICO and SVG masks.');
+          NODE
               health_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/health)"
               printf '%s' "$health_payload" | node -e 'let raw="";process.stdin.on("data",c=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw);if(p.healthSemantics?.level!=="liveness"||typeof p.healthSemantics?.realDwnProtocol!=="boolean")process.exit(1)}catch(_){process.exit(1)}})'
               pay_payload="$(curl -fsSL --max-time 15 https://milanlife.in/api/milan-pay/config)"
               printf '%s' "$pay_payload" | node -e 'let raw="";process.stdin.on("data",c=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw);if(p.ok!==true||p.verificationMode!=="manual-bank-verification"||p.automaticPaymentConfirmationAvailable!==false||typeof p.merchantVerificationStatus!=="string"||typeof p.upiAvailable!=="boolean"||typeof p.googlePayIosAvailable!=="boolean")process.exit(1)}catch(_){process.exit(1)}})'
-              echo "🟢 LIVE — public UI, health semantics and MILAN Pay status contract are reachable"
+              echo "🟢 LIVE — UI, favicon formats, PWA manifest, OG site name, health and MILAN Pay contracts are reachable"
               {
                 echo "## 🟢 LIVE — Production"
                 echo ""
                 echo "Production smoke checks passed:"
                 echo "- / and /chat/"
+                echo "- favicon.ico, valid favicon.svg, Apple touch icon, Safari mask, Windows tile"
+                echo "- PNG favicon sizes 16/32/48/96/180/192/512 and PWA manifest"
+                echo "- Homepage OG site_name is MILAN"
                 echo "- /robots.txt, /sitemap.xml, /sitemap-index.xml"
                 echo "- /llms.txt, /keywords.json, /ai-info and aliases"
                 echo "- /api/health reports liveness separately from DWN protocol readiness"

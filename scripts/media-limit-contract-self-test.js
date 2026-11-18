@@ -9,7 +9,6 @@ const modulePath = path.join(root, 'backend/services/mediaLimits.js');
 
 function run(overrides = {}) {
   const env = { ...process.env };
-  delete env.MILAN_MAX_VOROA_MEDIA_BYTES;
   delete env.MAX_MEDIA_BYTES;
   Object.assign(env, overrides);
   return spawnSync(process.execPath, [
@@ -26,8 +25,7 @@ assert.deepEqual(JSON.parse(result.stdout), {
 console.log('PASS: default media limit is 768 MiB.');
 
 result = run({
-  MILAN_MAX_VOROA_MEDIA_BYTES: '123456789',
-  MAX_MEDIA_BYTES: '987654321'
+  MAX_MEDIA_BYTES: '123456789'
 });
 assert.equal(result.status, 0, result.stderr);
 assert.equal(JSON.parse(result.stdout).bytes, 123456789);
@@ -36,11 +34,11 @@ console.log('PASS: canonical variable takes precedence.');
 result = run({ MAX_MEDIA_BYTES: '234567890' });
 assert.equal(result.status, 0, result.stderr);
 assert.equal(JSON.parse(result.stdout).bytes, 234567890);
-console.log('PASS: legacy fallback remains supported.');
+console.log('PASS: MAX_MEDIA_BYTES override is honored.');
 
 for (const value of ['0', '-1', '1.5', 'invalid', '9007199254740992']) {
   assert.notEqual(
-    run({ MILAN_MAX_VOROA_MEDIA_BYTES: value }).status, 0,
+    run({ MAX_MEDIA_BYTES: value }).status, 0,
     `Invalid limit accepted: ${value}`
   );
 }

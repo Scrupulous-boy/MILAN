@@ -1,14 +1,14 @@
 {
   "name": "milan-decentralized-social-space",
   "version": "70.0.0",
-  "description": "MILAN application and MILAN-ONE ecosystem workspace; static HTML/CSS/JS frontend, Express API, Voroa PostgreSQL persistence, and experimental companion components.",
+  "description": "MILAN application and MILAN-ONE ecosystem workspace; static HTML/CSS/JS frontend, Express API, PostgreSQL persistence, and experimental companion components.",
   "main": "backend/server.js",
   "scripts": {
     "start": "node -r ./backend/services/avatar-hydration-guard.js backend/server.js",
     "dev": "node -r ./backend/services/avatar-hydration-guard.js backend/server.js",
     "mail:test": "node backend/scripts/test-mail.js",
     "mail:diagnose": "node backend/scripts/smtp-diagnose.js",
-    "build": "node scripts/verify-build.js",
+    "build": "node scripts/prepare-favicons.js && node scripts/verify-build.js",
     "test:chat": "node scripts/chat-self-test.js",
     "test:payment": "node scripts/payment-self-test.js",
     "test:milan-pay": "node scripts/milan-pay-self-test.js",
@@ -18,7 +18,7 @@
     "test:upload-policy": "node scripts/upload-performance-policy-self-test.js",
     "test:distributed-rate-limit": "node scripts/distributed-rate-limit-self-test.js",
     "test:feed-pagination": "node scripts/feed-pagination-self-test.js",
-  "test:feed-smoothness": "node scripts/feed-scroll-performance-self-test.js",
+    "test:feed-smoothness": "node scripts/feed-scroll-performance-self-test.js",
     "test:video-range": "node scripts/video-range-self-test.js",
     "test:video-scroll": "node scripts/video-scroll-playback-self-test.js",
     "test:persistence-visibility": "node scripts/persistence-visibility-self-test.js",
@@ -28,10 +28,19 @@
     "test:readiness": "node scripts/readiness-contract-self-test.js",
     "test:webauthn": "node scripts/webauthn-voroa-self-test.js",
     "test:payment-idempotency-runtime": "node scripts/payment-idempotency-runtime-self-test.js",
+<<<<<<< HEAD
   "test:cashfree-gateway": "node scripts/cashfree-gateway-self-test.js",
   "test:cashfree-route": "node scripts/cashfree-route-self-test.js",
   "test:cashfree": "npm run test:cashfree-gateway && npm run test:cashfree-route",
     "test:avatar-persistence": "node scripts/avatar-persistence-self-test.js"
+=======
+    "test:avatar-persistence": "node scripts/avatar-persistence-self-test.js",
+    "test:cashfree-gateway": "node scripts/cashfree-gateway-self-test.js",
+    "test:cashfree-route": "node scripts/cashfree-route-self-test.js",
+    "test:cashfree": "npm run test:cashfree-gateway && npm run test:cashfree-route",
+    "test:webauthn": "node scripts/webauthn-self-test.js",
+    "prestart": "node scripts/prepare-favicons.js"
+>>>>>>> origin/main
   },
   "dependencies": {
     "@simplewebauthn/server": "^13.3.2",
@@ -48,12 +57,13 @@
     "ioredis": "^6.0.0",
     "ipfs-unixfs-exporter": "13.1.0",
     "jsonwebtoken": "^9.0.0",
-    "multer": "^2.3.0",
+    "multer": "^2.5.0",
     "nodemailer": "^10.2.0",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.4",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "body-parser": "^1.20.9"
   },
   "overrides": {
     "uuid": "^11.1.0",

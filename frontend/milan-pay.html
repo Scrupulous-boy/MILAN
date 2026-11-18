@@ -24,6 +24,23 @@ main{max-width:760px;margin:0 auto;padding:28px 18px 60px}.top{display:flex;alig
 .cashfree-panel a{display:block;text-align:center;margin-top:12px}
 
 </style>
+
+  <!-- MILAN cross-browser favicon and app identity -->
+  <link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96x96.png?v=20261108-brand1">
+  <link rel="icon" type="image/png" sizes="48x48" href="/assets/favicon-48x48.png?v=20261108-brand1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png?v=20261108-brand1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png?v=20261108-brand1">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261108-brand1" sizes="any">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20261108-brand1" sizes="any">
+  <link rel="shortcut icon" href="/favicon.ico?v=20261108-brand1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20261108-brand1">
+  <link rel="mask-icon" href="/safari-pinned-tab.svg?v=20261108-brand1" color="#050e2b">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#050e2b">
+  <meta name="application-name" content="MILAN">
+  <meta name="apple-mobile-web-app-title" content="MILAN">
+  <meta name="msapplication-TileColor" content="#050e2b">
+  <meta name="msapplication-config" content="/browserconfig.xml?v=20261108-brand1">
 </head>
 <body>
 <main>
@@ -252,6 +269,7 @@ main{max-width:760px;margin:0 auto;padding:28px 18px 60px}.top{display:flex;alig
 
     if (cashfreeSdkPromise) return cashfreeSdkPromise;
 
+<<<<<<< HEAD
     cashfreeSdkPromise = new Promise((resolve, reject) => {
       let script = document.querySelector('script[data-cashfree-sdk="true"]');
 
@@ -279,6 +297,92 @@ main{max-width:760px;margin:0 auto;padding:28px 18px 60px}.top{display:flex;alig
       };
 
       if (!script.isConnected) document.head.appendChild(script);
+=======
+    cashfreeSdkPromise = (async () => {
+      const maxAttempts = 3;
+      const timeoutMs = 15000;
+      let lastError = null;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        if (typeof window.Cashfree === "function") {
+          return window.Cashfree;
+        }
+
+        // A failed script element stays connected in the DOM. Remove it before
+        // each retry so the browser actually starts a fresh CDN request.
+        const existingScript = document.querySelector('script[data-cashfree-sdk="true"]');
+        if (existingScript) existingScript.remove();
+
+        const script = document.createElement("script");
+        script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+        script.async = true;
+        script.dataset.cashfreeSdk = "true";
+
+        try {
+          await new Promise((resolve, reject) => {
+            let settled = false;
+            const timeoutId = window.setTimeout(() => {
+              finish(new Error("Cashfree SDK request timed out."));
+            }, timeoutMs);
+
+            function finish(error) {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(timeoutId);
+              script.onload = null;
+              script.onerror = null;
+              if (error) reject(error);
+              else resolve();
+            }
+
+            script.onload = () => {
+              if (typeof window.Cashfree === "function") {
+                finish();
+              } else {
+                finish(new Error("Cashfree SDK loaded but did not initialize."));
+              }
+            };
+
+            script.onerror = () => {
+              finish(new Error("Cashfree SDK request failed. The CDN may be blocked by the network, DNS, browser, or a content-blocking extension."));
+            };
+
+            try {
+              document.head.appendChild(script);
+            } catch (error) {
+              finish(error);
+            }
+          });
+
+          if (typeof window.Cashfree === "function") {
+            return window.Cashfree;
+          }
+
+          lastError = new Error("Cashfree SDK did not expose its checkout function.");
+        } catch (error) {
+          lastError = error;
+          script.remove();
+        }
+
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => window.setTimeout(resolve, 400 * attempt));
+        }
+      }
+
+      const detail = lastError && lastError.message
+        ? lastError.message
+        : "The Cashfree SDK could not be reached.";
+      throw new Error(
+        "Cashfree checkout SDK could not be loaded after " +
+        maxAttempts +
+        " attempts. " +
+        detail +
+        " Check your connection or browser content blocker, then retry."
+      );
+    })().finally(() => {
+      // Always clear the shared promise. A later tap can start a fresh attempt.
+      cashfreeSdkPromise = null;
+>>>>>>> origin/main
     });
 
     return cashfreeSdkPromise;

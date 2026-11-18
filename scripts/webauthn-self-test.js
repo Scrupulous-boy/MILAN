@@ -4,7 +4,7 @@ const fs = require('node:fs');
 
 const did = fs.readFileSync('backend/routes/did.js', 'utf8');
 const migration = fs.readFileSync(
-  'backend/migrations/20261019_voroa_milan_pay.sql', 'utf8'
+  'backend/migrations/20261019_milan_pay.sql', 'utf8'
 );
 
 assert.match(did, /SELECT COUNT\(\*\)::int AS count FROM public\.webauthn_credentials WHERE user_id = \$1/);
