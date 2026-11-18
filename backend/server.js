@@ -529,7 +529,6 @@ Host: ${PUBLIC_BASE_URL.replace(/^https?:\/\//, '')}
 Sitemap: ${PUBLIC_BASE_URL}/sitemap-index.xml
 Sitemap: ${PUBLIC_BASE_URL}/sitemap.xml
 Sitemap: ${PUBLIC_BASE_URL}/sitemap-keywords.xml
-Sitemap: ${PUBLIC_BASE_URL}/sitemap-cities.xml
 `);
 });
 app.get('/favicon.ico', (_req, res) => {
@@ -697,13 +696,11 @@ app.get(['/sitemap-index.xml', '/sitemap_index.xml'], (_req, res) => {
     <loc>${PUBLIC_BASE_URL}/sitemap-keywords.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
-  <sitemap>
-    <loc>${PUBLIC_BASE_URL}/sitemap-cities.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
 </sitemapindex>`);
 });
-app.get(['/decentralized-social-media', '/decentralized-social-network', '/own-your-data', '/own-your-data-social-media', '/data-ownership-social-network', '/web5-social-network'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/decentralized-social-media.html')));
+app.get('/decentralized-social-network', (_req, res) =>
+  res.redirect(301, '/decentralized-social-media'));
+app.get(['/decentralized-social-media', '/own-your-data', '/own-your-data-social-media', '/data-ownership-social-network', '/web5-social-network'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/decentralized-social-media.html')));
 app.get(['/private-social-network', '/whatsapp-alternative', '/instagram-alternative', '/facebook-alternative', '/no-tracking-social-app', '/ad-free-social-network', '/private-social-app-india'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/private-social-network.html')));
 app.get(['/best-social-media-apps', '/best-social-media', '/best-privacy-social-apps', '/best-social-media-app-2026'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/best-social-media-apps.html')));
 app.get(['/what-is-web5', '/web5', '/web5-explained', '/dwn-did-explained'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/what-is-web5.html')));
@@ -713,14 +710,10 @@ app.get('/who-is-the-founder-of-milan', (_req, res) => res.redirect(301, '/about
 app.get(['/social-media-privacy', '/privacy-guide', '/self-sovereign-identity', '/social-media-data-privacy', '/stop-social-media-tracking'], (_req, res) => res.sendFile(path.join(__dirname, '../frontend/social-media-privacy.html')));
 
 // ── City hubs: decentralized social by metro (unique local content, self-canonical, NOT doorway pages) ──
-['mumbai', 'delhi', 'bengaluru', 'hyderabad', 'chennai', 'kolkata', 'pune', 'jaipur'].forEach((cty) => {
-  app.get('/decentralized-social-media/' + cty, (_req, res) =>
-    res.sendFile(path.join(__dirname, '../frontend/city/' + cty + '.html')));
-});
-app.get('/sitemap-cities.xml', (_req, res) => {
-  res.setHeader('Cache-Control', 'public, max-age=3600');
-  res.setHeader('X-Robots-Tag', 'all');
-  res.type('application/xml').sendFile(path.join(__dirname, '../frontend/sitemap-cities.xml'));
+// Retired city-specific landing pages: preserve old URLs with permanent redirects.
+['mumbai', 'delhi', 'bengaluru', 'hyderabad', 'chennai', 'kolkata', 'pune', 'jaipur'].forEach((city) => {
+  app.get('/decentralized-social-media/' + city, (_req, res) =>
+    res.redirect(301, '/decentralized-social-media'));
 });
 app.get('/about', (_req, res) => res.sendFile(path.join(__dirname, '../frontend/about.html')));
 app.get('/privacy', (_req, res) => res.sendFile(path.join(__dirname, '../frontend/privacy.html')));
