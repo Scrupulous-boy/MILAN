@@ -58,7 +58,7 @@ jobs:
           npm run test:payment-idempotency-runtime
           npm run test:cashfree
           npm run test:webauthn
-          npm run test:upload
+          MILAN_DATABASE_URL=postgres://milan-test:milan-test@127.0.0.1:1/milan_test npm run test:upload
           npm run test:upload-policy
           npm run test:distributed-rate-limit
           npm run test:feed-pagination
