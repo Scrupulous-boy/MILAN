@@ -6,6 +6,9 @@ on:
     branches:
       - migration/aws-autonomous-foundation
       - main
+  pull_request:
+    branches:
+      - main
   schedule:
     - cron: "17 1 * * *"
 
