@@ -65,3 +65,42 @@ RDS PostgreSQL 18.6 is listed in AWS's supported release notes. The final engine
 ## 6. What this PR does not do
 
 It does not create AWS infrastructure, accept new cloud charges, read or migrate production secrets, change DNS, modify the production database, change GCP services or deploy user traffic. It establishes a verifiable path to do those things safely through hosted automation rather than daily WSL commands.
+
+## 7. One-time GitHub-to-AWS identity setup (no permanent AWS keys)
+
+Use GitHub OIDC so workflows receive short-lived AWS credentials. Do not add an IAM user's access-key secret to GitHub.
+
+Create the AWS IAM OIDC provider once:
+- Provider URL: `https://token.actions.githubusercontent.com`
+- Audience: `sts.amazonaws.com`
+
+Then create a separate deployment role for this repository. Its trust policy must restrict both the audience and exact branch subject:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {
+      "Federated": "arn:aws:iam::517570868920:oidc-provider/token.actions.githubusercontent.com"
+    },
+    "Action": "sts:AssumeRoleWithWebIdentity",
+    "Condition": {
+      "StringEquals": {
+        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+        "token.actions.githubusercontent.com:sub": "repo:Scrupulous-boy/MILAN:ref:refs/heads/migration/aws-autonomous-foundation"
+      }
+    }
+  }]
+}
+```
+
+This repository was created before GitHub's 15 July 2026 immutable-subject change, so its expected subject is the legacy repository-name form unless the repository has explicitly opted in to immutable subjects. Re-check the issued claim before finalizing trust.
+
+**Do not attach AdministratorAccess.** The role's permission policy will be generated from the reviewed infrastructure stack and limited to the needed ECR/ECS/RDS/CloudFormation/Secrets Manager actions. The AWS account's current IAM identity is read-only, so an account administrator must create the provider and role through the AWS Console once.
+
+## 8. AWS account-plan and cost gate
+
+The account is currently on the AWS Free account plan. Before provisioning, confirm the selected services are eligible for this plan and that the plan will not close while the new production stack is running. AWS states that the Free account plan ends after six months or when credits are exhausted, whichever comes first; after expiry the account closes unless upgraded within the stated recovery window. A production migration must not rely on a trial account that can close and remove access to resources.
+
+Create cost alerts and confirm whether an upgrade to the Paid account plan is required before any always-on ALB, ECS service, or RDS database is created. Do not interpret the promotional credits as a guarantee that the complete always-on stack will remain free.
