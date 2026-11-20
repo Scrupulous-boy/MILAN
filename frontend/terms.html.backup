@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <!-- MILAN — authoritative favicon setup -->
+  <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico?v=2" type="image/x-icon" sizes="any">
+  <link rel="apple-touch-icon" href="/assets/milan-logo-circle.png?v=2" sizes="180x180">
+  <link rel="manifest" href="/manifest.json">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terms of Use — MILAN Decentralized Social Media</title>
+<meta name="description" content="MILAN terms of use for the privacy-first decentralized social network built on DWN and DID technology. Founded by Nitesh Pandey.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://milanlife.in/terms">
+<meta name="theme-color" content="#0b0f1a">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Milan">
+<meta property="og:title" content="MILAN Terms of Use">
+<meta property="og:description" content="MILAN terms of use for the privacy-first decentralized social network built on DWN and DID technology.">
+<meta property="og:url" content="https://milanlife.in/terms">
+<meta property="og:image" content="https://milanlife.in/assets/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Terms of Use — MILAN Decentralized Social Media">
+<meta name="twitter:description" content="MILAN terms of use for the privacy-first decentralized social network built on DWN and DID technology. Founded by Nitesh Pandey.">
+<meta name="twitter:image" content="https://milanlife.in/assets/og-cover.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0f1a;--bg2:#0c111d;--card:#121826;--text:#eef1f8;--muted:#97a2bd;--line:rgba(148,163,196,.14);--brand:#4f7cf6;--brand2:#5b9bd8;--soft:rgba(79,124,246,.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);line-height:1.75;
+  background:radial-gradient(1200px 600px at 50% -10%,rgba(79,124,246,.10),transparent 60%),linear-gradient(180deg,var(--bg),var(--bg2) 60%,var(--bg));min-height:100vh}
+a{color:var(--brand2);text-decoration:none}a:hover{text-decoration:underline}
+.nav{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);background:rgba(12,16,26,.82);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 22px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:.16em}
+.brand img{width:38px;height:38px;border-radius:11px;background:#0e1422;padding:3px;box-shadow:0 0 0 1px var(--line)}
+.nav-links{display:flex;gap:18px;font-size:14px}.nav-links a{color:var(--muted)}.nav-links a:hover{color:var(--text)}
+.wrap{width:100%;max-width:1180px;margin:0 auto;padding:48px 28px 90px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand2);margin-bottom:12px}
+h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+.updated{color:var(--muted);font-size:14px;margin-bottom:14px}
+h2{font-size:20px;font-weight:700;margin:36px 0 12px;letter-spacing:-.01em}
+p{color:#c2cbe0;margin-bottom:14px}
+ul{margin:0 0 16px 20px;color:#c2cbe0}li{margin-bottom:8px}
+.callout{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:12px;padding:18px 20px;margin:18px 0}
+.callout b{color:var(--text)}
+.foot{border-top:1px solid var(--line);margin-top:56px;padding-top:24px;color:var(--muted);font-size:13px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+.foot a{color:var(--muted)}
+</style>
+<link rel="stylesheet" href="/milan-core.css?v=20261005-ui1">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://milanlife.in/"},{"@type":"ListItem","position":2,"name":"Terms of Service","item":"https://milanlife.in/terms"}]}
+</script>
+
+<style>
+.wrap{
+  width:100%;
+  max-width:1180px;
+  margin:0 auto;
+  padding:48px 28px 90px;
+}
+.hero-card{
+  background:linear-gradient(145deg,#151d2d,#0f1522);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:28px;
+  padding:42px 44px;
+  box-shadow:0 24px 70px rgba(0,0,0,.35);
+}
+.eyebrow{
+  letter-spacing:.18em;
+  font-size:12px;
+  font-weight:700;
+  opacity:.65;
+}
+h1{
+  font-size:clamp(42px,6vw,72px);
+  line-height:1.02;
+  margin:12px 0 10px;
+}
+.updated{
+  opacity:.55;
+  font-size:14px;
+}
+.hero-line{
+  height:1px;
+  margin:28px 0 34px;
+  background:linear-gradient(90deg,rgba(255,255,255,.18),transparent);
+}
+.legal-content{
+  max-width:100%;
+}
+.legal-content h2{
+  margin-top:38px;
+  font-size:21px;
+}
+.legal-content p,
+.legal-content li{
+  font-size:16px;
+  line-height:1.8;
+  color:rgba(255,255,255,.76);
+}
+.legal-content ul{
+  padding-left:24px;
+}
+.contact-card{
+  margin-top:18px;
+  padding:20px 22px;
+  border-radius:18px;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.07);
+}
+@media(max-width:700px){
+  .wrap{padding:24px 14px 60px}
+  .hero-card{padding:28px 22px;border-radius:22px}
+  h1{font-size:42px}
+}
+</style>
+
+
+<style id="terms-ui-overrides">
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px;
+}
+
+body {
+  overflow-wrap: anywhere;
+}
+
+.nav-in {
+  gap: 12px;
+  max-width: 1200px;
+}
+
+.brand {
+  flex-shrink: 0;
+}
+
+.nav-links {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nav-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.wrap {
+  max-width: 1040px;
+  padding: clamp(24px, 4vw, 48px)
+           clamp(14px, 3vw, 28px) 72px;
+}
+
+.hero-card {
+  width: 100%;
+  padding: clamp(22px, 4vw, 46px);
+  border-radius: 24px;
+}
+
+h1 {
+  font-size: clamp(36px, 6vw, 66px);
+  line-height: 1.06;
+  letter-spacing: -0.045em;
+  overflow-wrap: anywhere;
+}
+
+.hero-line,
+.callout,
+.legal-content,
+.contact-card {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-line {
+  margin-top: 26px;
+  margin-bottom: 28px;
+}
+
+.callout {
+  padding: 18px 20px;
+  line-height: 1.8;
+}
+
+.terms-index {
+  width: 100%;
+  max-width: 760px;
+  margin: 26px auto 34px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(18, 24, 38, .78);
+}
+
+.terms-index-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-bottom: 14px;
+}
+
+.terms-index-heading strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.terms-index-heading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.terms-index-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.terms-index-links a {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .018);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  text-decoration: none;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.terms-index-links a:hover {
+  background: var(--soft);
+  border-color: rgba(79, 124, 246, .5);
+  text-decoration: none;
+}
+
+.terms-index-number {
+  flex: 0 0 auto;
+  color: var(--brand2);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.legal-content h2 {
+  margin-top: 38px;
+  margin-bottom: 14px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--line);
+  font-size: clamp(19px, 3vw, 22px);
+  line-height: 1.4;
+  scroll-margin-top: 100px;
+  overflow-wrap: anywhere;
+}
+
+.legal-content p,
+.legal-content li {
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+
+.legal-content ul {
+  padding-left: 24px;
+}
+
+.contact-card {
+  box-sizing: border-box;
+}
+
+.foot {
+  width: 100%;
+  max-width: 760px;
+  margin: 38px auto 0;
+  gap: 14px 20px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--brand2);
+  outline-offset: 3px;
+}
+
+@media (max-width: 700px) {
+  .nav-in {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+  }
+
+  .nav-links {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-links a {
+    flex: 0 0 auto;
+    font-size: 13px;
+  }
+
+  .wrap {
+    padding: 22px 13px 48px;
+  }
+
+  .hero-card {
+    padding: 24px 17px;
+    border-radius: 18px;
+  }
+
+  h1 {
+    font-size: clamp(34px, 9vw, 46px);
+  }
+
+  .terms-index {
+    padding: 14px;
+    border-radius: 15px;
+  }
+
+  .terms-index-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .terms-index-links a {
+    padding: 10px 8px;
+    gap: 6px;
+  }
+
+  .legal-content h2 {
+    margin-top: 30px;
+  }
+
+  .foot {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 28px;
+  }
+}
+
+@media (max-width: 360px) {
+  .terms-index-links {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+</style>
+
+</head>
+<body>
+<nav class="nav"><div class="nav-in">
+  <a class="brand" href="/"><img src="/assets/milan-logo-circle.png" alt="MILAN">MILAN</a>
+  <div class="nav-links"><a href="/about">About</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/app">Open app</a></div>
+</div></nav>
+
+<main class="wrap">
+  <div class="hero-card">
+    <div class="eyebrow">MILAN · TERMS</div>
+    <h1>Terms of Use</h1>
+  <div class="updated">Last updated: July 2, 2026</div>
+  <div class="hero-line"></div>
+
+  <div class="callout">
+    <b>In plain words:</b> Use MILAN respectfully, own what you post, and don't upload anything illegal or harmful. You're responsible for your content; MILAN provides the platform.
+  </div>
+
+
+  <nav class="terms-index" aria-label="Terms of Use sections">
+    <div class="terms-index-heading">
+      <strong>On this page</strong>
+      <span>Jump directly to a section</span>
+    </div>
+    <div class="terms-index-links">
+      <a href="#terms-acceptance"><span class="terms-index-number">01</span><span>Acceptance</span></a>
+      <a href="#terms-account"><span class="terms-index-number">02</span><span>Your account</span></a>
+      <a href="#terms-content"><span class="terms-index-number">03</span><span>Your content</span></a>
+      <a href="#terms-acceptable-use"><span class="terms-index-number">04</span><span>Acceptable use</span></a>
+      <a href="#terms-intellectual-property"><span class="terms-index-number">05</span><span>Intellectual property</span></a>
+      <a href="#terms-moderation"><span class="terms-index-number">06</span><span>Moderation</span></a>
+      <a href="#terms-service-status"><span class="terms-index-number">07</span><span>Service status</span></a>
+      <a href="#terms-liability"><span class="terms-index-number">08</span><span>Limitation of liability</span></a>
+      <a href="#terms-termination"><span class="terms-index-number">09</span><span>Termination</span></a>
+      <a href="#terms-governing-law"><span class="terms-index-number">10</span><span>Governing law</span></a>
+      <a href="#terms-changes"><span class="terms-index-number">11</span><span>Changes</span></a>
+      <a href="#terms-contact"><span class="terms-index-number">12</span><span>Contact</span></a>
+    </div>
+  </nav>
+
+  <div class="legal-content">
+  <h2 id="terms-acceptance">1. Acceptance</h2>
+  <p>By creating an account or using MILAN, you agree to these Terms of Use. If you don't agree, please don't use the service.</p>
+
+  <h2 id="terms-account">2. Your account</h2>
+  <p>You're responsible for activity on your account and for keeping your credentials secure. MILAN gives you a Decentralized Identifier (DID) and a Decentralized Web Node (DWN); the identity and the content stored in it are associated with you.</p>
+
+  <h2 id="terms-content">3. Your content</h2>
+  <p>You own the content you create on MILAN. You're responsible for what you publish or share. By making content public or sharing it with a DID, you grant the recipients the ability to view it according to the access level you set.</p>
+
+  <h2 id="terms-acceptable-use">4. Acceptable use</h2>
+  <p>You agree not to use MILAN to:</p>
+  <ul>
+    <li>Upload illegal, harmful, hateful or abusive content.</li>
+    <li>Harass, threaten, impersonate or violate the privacy of others.</li>
+    <li>Distribute malware, spam, or attempt to break or overload the service.</li>
+    <li>Infringe intellectual property or other rights.</li>
+  </ul>
+
+  <h2 id="terms-intellectual-property">5. Intellectual property</h2>
+  <p>The MILAN name, logo, design, code and all original content on this website (including guides such as the decentralized social media knowledge hub) are the intellectual property of MILAN / Nitesh Pandey unless otherwise stated. You must not republish, sell, rent, sub-license or reproduce our material for commercial purposes without written permission. You may quote short excerpts with a link back to the source page. Your own content remains yours (see section 3).</p>
+
+  <h2 id="terms-moderation">6. Moderation</h2>
+  <p>To keep the community safe, MILAN may remove content or restrict accounts that violate these terms or applicable law.</p>
+
+  <h2 id="terms-service-status">7. Service status</h2>
+  <p>MILAN is an evolving product. Features, storage and availability may change as the platform develops. We work to keep the service reliable but provide it "as is" without warranties of uninterrupted availability.</p>
+
+  <h2 id="terms-liability">8. Limitation of liability</h2>
+  <p>To the extent permitted by law, MILAN, its founder, and anyone working on the platform are not liable for indirect or incidental damages arising from your use of the service. You use MILAN at your own discretion and risk.</p>
+
+  <h2 id="terms-termination">9. Termination</h2>
+  <p>You may stop using MILAN and request account deletion at any time. We may suspend or terminate accounts that breach these terms.</p>
+
+  <h2 id="terms-governing-law">10. Governing law</h2>
+  <p>These terms are governed by the laws of India. Any disputes are subject to the jurisdiction of Indian courts.</p>
+
+  <h2 id="terms-changes">11. Changes</h2>
+  <p>We may update these terms as MILAN grows. Material changes will be posted here with a new date.</p>
+
+  <h2 id="terms-contact">12. Contact</h2>
+  <div class="contact-card">
+    <p>Questions about these terms? Email <a href="mailto:support@milanlife.in">support@milanlife.in</a>. MILAN was founded by Nitesh Pandey and is hosted at milanlife.in.</p>
+  </div>
+  </div>
+
+  <div class="foot">
+    <span>MILAN · Your Space. Your People.</span>
+    <span><a href="/">Home</a> · <a href="/about">About</a> · <a href="/privacy">Privacy</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/cookie-policy">Cookie Policy</a></span>
+  </div>
+  </div>
+</main>
+<script src="/milan-core.js?v=20260627" defer></script>
+<script src="/milan-polish.js?v=20260627" defer></script>
+</body>
+</html>

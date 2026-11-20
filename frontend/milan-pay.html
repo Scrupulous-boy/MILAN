@@ -269,6 +269,35 @@ main{max-width:760px;margin:0 auto;padding:28px 18px 60px}.top{display:flex;alig
 
     if (cashfreeSdkPromise) return cashfreeSdkPromise;
 
+<<<<<<< HEAD
+    cashfreeSdkPromise = new Promise((resolve, reject) => {
+      let script = document.querySelector('script[data-cashfree-sdk="true"]');
+
+      if (!script) {
+        script = document.createElement("script");
+        script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+        script.async = true;
+        script.dataset.cashfreeSdk = "true";
+        script.crossOrigin = "anonymous";
+        script.referrerPolicy = "strict-origin-when-cross-origin";
+      }
+
+      script.onload = () => {
+        if (typeof window.Cashfree === "function") {
+          resolve(window.Cashfree);
+        } else {
+          cashfreeSdkPromise = null;
+          reject(new Error("Cashfree checkout SDK did not initialize."));
+        }
+      };
+
+      script.onerror = () => {
+        cashfreeSdkPromise = null;
+        reject(new Error("Cashfree checkout SDK could not be loaded."));
+      };
+
+      if (!script.isConnected) document.head.appendChild(script);
+=======
     cashfreeSdkPromise = (async () => {
       const maxAttempts = 3;
       const timeoutMs = 15000;
@@ -353,6 +382,7 @@ main{max-width:760px;margin:0 auto;padding:28px 18px 60px}.top{display:flex;alig
     })().finally(() => {
       // Always clear the shared promise. A later tap can start a fresh attempt.
       cashfreeSdkPromise = null;
+>>>>>>> origin/main
     });
 
     return cashfreeSdkPromise;

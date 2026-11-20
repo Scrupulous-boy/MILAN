@@ -26,13 +26,21 @@
     "test:session-token": "node scripts/session-token-self-test.js",
     "test:media-limits": "node scripts/media-limit-contract-self-test.js",
     "test:readiness": "node scripts/readiness-contract-self-test.js",
+    "test:webauthn": "node scripts/webauthn-voroa-self-test.js",
     "test:payment-idempotency-runtime": "node scripts/payment-idempotency-runtime-self-test.js",
+<<<<<<< HEAD
+  "test:cashfree-gateway": "node scripts/cashfree-gateway-self-test.js",
+  "test:cashfree-route": "node scripts/cashfree-route-self-test.js",
+  "test:cashfree": "npm run test:cashfree-gateway && npm run test:cashfree-route",
+    "test:avatar-persistence": "node scripts/avatar-persistence-self-test.js"
+=======
     "test:avatar-persistence": "node scripts/avatar-persistence-self-test.js",
     "test:cashfree-gateway": "node scripts/cashfree-gateway-self-test.js",
     "test:cashfree-route": "node scripts/cashfree-route-self-test.js",
     "test:cashfree": "npm run test:cashfree-gateway && npm run test:cashfree-route",
     "test:webauthn": "node scripts/webauthn-self-test.js",
     "prestart": "node scripts/prepare-favicons.js"
+>>>>>>> origin/main
   },
   "dependencies": {
     "@simplewebauthn/server": "^14.0.3",
