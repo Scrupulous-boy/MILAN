@@ -1,0 +1,104 @@
+name: MILAN AWS Migration Preflight
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - migration/aws-autonomous-foundation
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "17 1 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: milan-aws-preflight-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-verification:
+    name: AWS migration source verification (no deployment)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout selected source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build and verify repository
+        run: npm run build
+
+      - name: Run backend and product contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run test:chat
+          npm run test:security
+          npm run test:payment
+          npm run test:milan-pay
+          npm run test:payment-idempotency
+          npm run test:payment-idempotency-runtime
+          npm run test:cashfree
+          npm run test:webauthn
+          MILAN_DATABASE_URL=postgres://milan-test:milan-test@127.0.0.1:1/milan_test npm run test:upload
+          npm run test:upload-policy
+          npm run test:distributed-rate-limit
+          npm run test:feed-pagination
+          npm run test:video-range
+          npm run test:video-scroll
+          npm run test:persistence-visibility
+          npm run test:ai-boundary
+          npm run test:session-token
+          npm run test:media-limits
+          npm run test:readiness
+          npm run test:avatar-persistence
+
+      - name: Build the repository's production container
+        run: docker build --pull --tag milan-aws-preflight:${{ github.sha }} .
+
+      - name: Produce non-secret migration inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p migration-evidence
+          {
+            echo "repository=Scrupulous-boy/MILAN"
+            echo "commit=${GITHUB_SHA}"
+            echo "ref=${GITHUB_REF}"
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "container_build=passed"
+            echo
+            echo "[environment_variable_names_only]"
+            sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' backend/.env.example | sort -u
+            echo
+            echo "[top_level_components]"
+            find . -mindepth 1 -maxdepth 1 -type d -not -path './.git' -printf '%f\n' | sort
+          } > migration-evidence/source-inventory.txt
+
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: milan-aws-preflight-${{ github.sha }}
+          path: migration-evidence/
+          if-no-files-found: warn
+          retention-days: 14
